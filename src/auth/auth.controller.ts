@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, Res } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Res
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { Response } from 'express';
@@ -35,6 +43,7 @@ export class AuthController {
 
   @ApiOperation({ summary: 'Sign in' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
+  @HttpCode(HttpStatus.OK)
   @Post('/signin')
   async signin(
     @Body() dto: LoginUserDto,
