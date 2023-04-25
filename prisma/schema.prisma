@@ -18,6 +18,8 @@ model User {
   email    String @unique
   password String
   username String
+
+  scores Score[]
 }
 
 model Token {
@@ -25,4 +27,23 @@ model Token {
 
   userId Int
   token  String @db.Text
+}
+
+model Game {
+  name   String  @id
+  scores Score[]
+}
+
+model Score {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  value Int
+  level String?
+
+  Game     Game   @relation(fields: [gameName], references: [name])
+  gameName String
+
+  User   User? @relation(fields: [userId], references: [id])
+  userId Int?
 }
