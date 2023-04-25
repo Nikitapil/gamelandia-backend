@@ -16,6 +16,9 @@ export class GamesService {
         throw new BadRequestException('level does not exist');
       }
     }
+    if (GAMES_LEVELS[dto.gameName] && !dto.level) {
+      throw new BadRequestException('level not specified');
+    }
     await this.prisma.score.create({
       data: {
         ...dto,

@@ -16,7 +16,7 @@
     "prisma:test:seed": "dotenv -e .env.test -- prisma db seed",
     "db:test:rm": "docker compose rm test-db -s -f -v",
     "db:test:up": "docker compose up test-db -d",
-    "db:test:restart": "npm run db:test:rm && npm run db:test:up && sleep 1 && npm run prisma:test:deploy && npm @prisma:test:seed",
+    "db:test:restart": "npm run db:test:rm && npm run db:test:up && sleep 1 && npm run prisma:test:deploy && npm run prisma:test:seed",
     "dev": "npm run db:dev:up && nest start --watch",
     "start:debug": "nest start --debug --watch",
     "start:prod": "node dist/main",
@@ -26,7 +26,7 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "pretest:e2e": "npm run db:test:restart",
-    "test:e2e": "dotenv -e .env.test -- jest --watch --no-cache --config ./test/jest-e2e.json"
+    "test:e2e": "dotenv -e .env.test -- jest --watch --no-cache --coverage --config ./test/jest-e2e.json"
   },
   "prisma": {
     "seed": "ts-node prisma/seed.ts"
