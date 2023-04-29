@@ -53,7 +53,8 @@ export class GamesService {
       include: {
         User: {
           select: {
-            username: true
+            username: true,
+            id: true
           }
         }
       },
@@ -78,7 +79,8 @@ export class GamesService {
       include: {
         User: {
           select: {
-            username: true
+            username: true,
+            id: true
           }
         }
       },
