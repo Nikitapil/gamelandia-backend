@@ -3,7 +3,12 @@ import { GamesService } from './games.service';
 import { JwtGuard } from '../Guards/auth/jwt.guard';
 import { User } from '../decorators/User.decorator';
 import { CreateScoreDto } from './dto/create-score.dto';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+  getSchemaPath
+} from '@nestjs/swagger';
 import { ScoreReturnDto } from './dto/score-return.dto';
 
 @ApiTags('Games')
@@ -20,7 +25,22 @@ export class GamesController {
   }
 
   @ApiOperation({ summary: 'get score' })
-  @ApiResponse({ status: 200, type: [ScoreReturnDto] })
+  @ApiResponse({
+    status: 200,
+    schema: {
+      properties: {
+        scores: {
+          type: 'array',
+          items: {
+            allOf: [{ $ref: getSchemaPath(ScoreReturnDto) }]
+          }
+        },
+        withLevels: {
+          type: 'boolean'
+        }
+      }
+    }
+  })
   @Get('/score/:name')
   getScoresByGameName(@Param('name') name: string) {
     return this.gamesService.getScoresByGameName(name);

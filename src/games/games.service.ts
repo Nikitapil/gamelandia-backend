@@ -37,10 +37,13 @@ export class GamesService {
           this.getScoresByGameNameAndLevel(gameName, level)
         )
       );
-      return scores.flat();
+      return {
+        scores: scores.flat(),
+        withLevels: true
+      };
     }
 
-    return this.prisma.score.findMany({
+    const scores = await this.prisma.score.findMany({
       where: {
         gameName
       },
@@ -56,6 +59,11 @@ export class GamesService {
       },
       take: 10
     });
+
+    return {
+      scores,
+      withLevels: false
+    };
   }
 
   private async getScoresByGameNameAndLevel(gameName: string, level: string) {
@@ -74,7 +82,7 @@ export class GamesService {
           }
         }
       },
-      take: 3
+      take: 10
     });
   }
 }

@@ -19,7 +19,8 @@ describe('Games tests', () => {
         .spec()
         .get('/games/score/tetris')
         .expectStatus(200)
-        .expectJsonLength(10);
+        .expectJsonLength('scores', 10)
+        .expectJson('withLevels', false);
     });
 
     it('should body to contain value', () => {
@@ -30,12 +31,13 @@ describe('Games tests', () => {
         .expectBodyContains('value');
     });
 
-    it('should get 9 scores for snake game with level', () => {
+    it('should get 30 scores for snake game with level', () => {
       return pactum
         .spec()
         .get('/games/score/snake')
         .expectStatus(200)
-        .expectJsonLength(9)
+        .expectJsonLength('scores', 30)
+        .expectJson('withLevels', true)
         .expectBodyContains('easy')
         .expectBodyContains('medium')
         .expectBodyContains('hard');

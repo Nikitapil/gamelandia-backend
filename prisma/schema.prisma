@@ -41,9 +41,9 @@ model Score {
   value Int
   level String?
 
-  Game     Game   @relation(fields: [gameName], references: [name])
+  Game     Game   @relation(fields: [gameName], references: [name], onDelete: Cascade)
   gameName String
 
-  User   User? @relation(fields: [userId], references: [id])
+  User   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int?
 }

@@ -12,9 +12,9 @@ export const seedGames = async (prisma: PrismaClient) => {
     {
       name: 'snake',
       scores: {
-        create: createInitialScores(3, 'easy')
-          .concat(createInitialScores(3, 'medium'))
-          .concat(createInitialScores(3, 'hard'))
+        create: createInitialScores(10, 'easy')
+          .concat(createInitialScores(10, 'medium'))
+          .concat(createInitialScores(10, 'hard'))
       }
     },
     {
