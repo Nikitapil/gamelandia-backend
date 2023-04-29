@@ -26,5 +26,5 @@ export class ScoreReturnDto {
     example: { username: 'Nick' },
     description: 'username of score owner'
   })
-  User: { username: string };
+  User: { username: string } | null;
 }
