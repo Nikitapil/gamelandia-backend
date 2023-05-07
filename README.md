@@ -3,4 +3,4 @@
  Backend project for the game app, frontend is here https://github.com/Nikitapil/gamelandia
  
 ## Technologies used: 
-NodeJs, NestJS, PostgreSQL
+NodeJs, NestJS, PostgreSQL, Prisma
