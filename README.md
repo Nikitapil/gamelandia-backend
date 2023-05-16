@@ -4,3 +4,5 @@
  
 ## Technologies used: 
 NodeJs, NestJS, PostgreSQL, Prisma, Swagger, JWT, Class-validator, docker, pactum
+
+Link to frontend part - https://github.com/Nikitapil/gamelandia 
