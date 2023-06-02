@@ -19,7 +19,8 @@ model User {
   password String
   username String
 
-  scores Score[]
+  scores    Score[]
+  winsCount WinCount[]
 }
 
 model Token {
@@ -30,11 +31,26 @@ model Token {
 }
 
 model Game {
-  name   String  @id
-  scores Score[]
+  name      String     @id
+  scores    Score[]
+  winsCount WinCount[]
 }
 
 model Score {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  value Int
+  level String?
+
+  Game     Game   @relation(fields: [gameName], references: [name], onDelete: Cascade)
+  gameName String
+
+  User   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int?
+}
+
+model WinCount {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
 
