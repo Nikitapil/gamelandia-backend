@@ -2,6 +2,7 @@ import { INestApplication } from '@nestjs/common';
 import * as pactum from 'pactum';
 import { createTestApp, registerUser } from './utils/test-utils';
 import { CreateScoreDto } from '../src/games/dto/score/create-score.dto';
+import { UpdateWinsCountDto } from '../src/games/dto/win-count/update-wins-count.dto';
 
 describe('Games tests', () => {
   let app: INestApplication;
@@ -149,6 +150,105 @@ describe('Games tests', () => {
         .expectBodyContains('username')
         .expectBodyContains('value')
         .expectBodyContains('easy');
+    });
+  });
+
+  describe('update wins count', () => {
+    let dto: UpdateWinsCountDto = {
+      gameName: 'snake',
+      level: 'easy'
+    };
+    let accessToken;
+
+    beforeEach(async () => {
+      dto = {
+        gameName: 'snake',
+        level: 'easy'
+      };
+    });
+
+    beforeAll(async () => {
+      accessToken = await registerUser({
+        email: 'test3@test.test',
+        username: 'test',
+        password: '12345678'
+      });
+    });
+
+    it('should throw if user Unuathorized', () => {
+      return pactum.spec().post('/games/win').withBody(dto).expectStatus(401);
+    });
+
+    it('should throw if dto with level and game not', () => {
+      dto.gameName = 'tetris';
+      return pactum
+        .spec()
+        .post('/games/win')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(400)
+        .expectBodyContains('level does not exist');
+    });
+
+    it('should throw if game with level and dto not', () => {
+      delete dto.level;
+      return pactum
+        .spec()
+        .post('/games/win')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(400)
+        .expectBodyContains('level not specified');
+    });
+
+    it('should throw if dto without gameName', () => {
+      delete dto.gameName;
+      return pactum
+        .spec()
+        .post('/games/win')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(400);
+    });
+
+    it('should create winCount', () => {
+      return pactum
+        .spec()
+        .post('/games/win')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(201)
+        .expectJson('[0].value', 1);
+    });
+
+    it('should update winCount', () => {
+      return pactum
+        .spec()
+        .post('/games/win')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(201)
+        .expectJson('[0].value', 2)
+        .expectJsonLength(1);
+    });
+
+    it('should get winCount by game name', () => {
+      return pactum
+        .spec()
+        .get('/games/win/snake')
+        .expectStatus(200)
+        .expectJson('[0].value', 2)
+        .expectJsonLength(1);
     });
   });
 });
