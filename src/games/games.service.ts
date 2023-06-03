@@ -78,7 +78,7 @@ export class GamesService {
 
   async updateWinsCount(dto: UpdateWinsCountDto, userId: number) {
     const { gameName, level = 'default' } = dto;
-    const scores = await this.prisma.winCount.upsert({
+    await this.prisma.winCount.upsert({
       where: {
         uniq_combination: { gameName, level, userId }
       },
