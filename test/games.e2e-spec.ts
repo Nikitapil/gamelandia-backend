@@ -1,7 +1,7 @@
 import { INestApplication } from '@nestjs/common';
 import * as pactum from 'pactum';
 import { createTestApp, registerUser } from './utils/test-utils';
-import { CreateScoreDto } from '../src/games/dto/create-score.dto';
+import { CreateScoreDto } from '../src/games/dto/score/create-score.dto';
 
 describe('Games tests', () => {
   let app: INestApplication;

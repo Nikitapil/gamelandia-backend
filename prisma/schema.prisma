@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -37,8 +34,9 @@ model Game {
 }
 
 model Score {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 
   value Int
   level String?
@@ -51,8 +49,9 @@ model Score {
 }
 
 model WinCount {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
+  id        Int       @id @default(autoincrement())
+  createdAt DateTime  @default(now())
+  updatedAt DateTime? @updatedAt
 
   value Int
   level String?
@@ -60,6 +59,8 @@ model WinCount {
   Game     Game   @relation(fields: [gameName], references: [name], onDelete: Cascade)
   gameName String
 
-  User   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int?
+  User   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId Int
+
+  @@unique([gameName, userId, level], name: "uniq_combination")
 }

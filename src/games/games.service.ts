@@ -1,6 +1,7 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
-import { CreateScoreDto } from './dto/create-score.dto';
+import { Injectable } from '@nestjs/common';
+import { CreateScoreDto } from './dto/score/create-score.dto';
 import { PrismaService } from '../prisma/prisma.service';
+import { UpdateWinsCountDto } from './dto/win-count/update-wins-count.dto';
 import { GAMES_LEVELS } from './constants';
 
 @Injectable()
@@ -8,17 +9,6 @@ export class GamesService {
   constructor(private prisma: PrismaService) {}
 
   async addScore(dto: CreateScoreDto, userId: number) {
-    if (dto.level) {
-      if (
-        !GAMES_LEVELS[dto.gameName] ||
-        !GAMES_LEVELS[dto.gameName].includes(dto.level)
-      ) {
-        throw new BadRequestException('level does not exist');
-      }
-    }
-    if (GAMES_LEVELS[dto.gameName] && !dto.level) {
-      throw new BadRequestException('level not specified');
-    }
     await this.prisma.score.create({
       data: {
         ...dto,
@@ -71,6 +61,45 @@ export class GamesService {
       where: {
         gameName,
         level
+      },
+      orderBy: {
+        value: 'desc'
+      },
+      include: {
+        User: {
+          select: {
+            username: true
+          }
+        }
+      },
+      take: 10
+    });
+  }
+
+  async updateWinsCount(dto: UpdateWinsCountDto, userId: number) {
+    const { gameName, level = 'default' } = dto;
+    const scores = await this.prisma.winCount.upsert({
+      where: {
+        uniq_combination: { gameName, level, userId }
+      },
+      create: {
+        gameName,
+        level,
+        userId,
+        value: 1
+      },
+      update: {
+        value: { increment: 1 }
+      }
+    });
+
+    return scores;
+  }
+
+  getWinnersByGameName(gameName: string) {
+    return this.prisma.winCount.findMany({
+      where: {
+        gameName
       },
       orderBy: {
         value: 'desc'
