@@ -49,6 +49,8 @@ export class GamesController {
     return this.gamesService.getScoresByGameName(name);
   }
 
+  @ApiOperation({ summary: 'add winCount' })
+  @ApiResponse({ status: 201, type: [ScoreReturnDto] })
   @UseGuards(JwtGuard)
   @UseGuards(LevelsGuard)
   @Post('/win')
@@ -56,6 +58,8 @@ export class GamesController {
     return this.gamesService.updateWinsCount(dto, userId);
   }
 
+  @ApiOperation({ summary: 'get winCount by game name' })
+  @ApiResponse({ status: 200, type: [ScoreReturnDto] })
   @Get('/win/:name')
   getWinnersByGameName(@Param('name') name: string) {
     return this.gamesService.getWinnersByGameName(name);
