@@ -93,10 +93,10 @@ export class GamesService {
       }
     });
 
-    return scores;
+    return this.getWinnersByGameName(dto.gameName);
   }
 
-  getWinnersByGameName(gameName: string) {
+  async getWinnersByGameName(gameName: string) {
     return this.prisma.winCount.findMany({
       where: {
         gameName
