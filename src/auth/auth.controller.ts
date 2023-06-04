@@ -35,7 +35,9 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       maxAge: COOKIE_EXPIRE_TIME,
-      httpOnly: true
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true
     });
 
     return { user, accessToken };
@@ -55,7 +57,9 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       maxAge: COOKIE_EXPIRE_TIME,
-      httpOnly: true
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true
     });
 
     return { user, accessToken };
@@ -74,7 +78,9 @@ export class AuthController {
 
     res.cookie('refreshToken', refreshToken, {
       maxAge: COOKIE_EXPIRE_TIME,
-      httpOnly: true
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true
     });
 
     return { user, accessToken };
@@ -87,7 +93,7 @@ export class AuthController {
     @Cookies('refreshToken') token: string,
     @Res({ passthrough: true }) res: Response
   ) {
-    res.clearCookie('refreshToken');
+    res.clearCookie('refreshToken', { sameSite: 'none', secure: true });
     return this.authService.logout(token);
   }
 }
