@@ -10,6 +10,8 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "prisma:dev:deploy": "prisma migrate deploy",
+    "prisma:prod:deploy": "dotenv -e .env.prod -- prisma migrate deploy",
+    "prisma:prod:seed": "dotenv -e .env.prod -- prisma db seed",
     "db:dev:up": "docker compose up dev-db -d",
     "db:dev:rm": "docker compose rm dev-db -s -f -v",
     "prisma:test:deploy": "dotenv -e .env.test -- prisma migrate deploy",
