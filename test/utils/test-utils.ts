@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { AppModule } from '../../src/app.module';
 import { ValidationPipe } from '@nestjs/common';
-import * as cookieParser from 'cookie-parser';
+import cookieParser from 'cookie-parser';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import * as pactum from 'pactum';
 import { CreateUserDto } from '../../src/auth/dto/create-user.dto';
