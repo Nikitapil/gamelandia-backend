@@ -137,7 +137,7 @@ export class GamesService {
     return data.map((game) => ({
       name: game.name,
       score: game.scores[0] || null,
-      winsCount: game.winsCount[0]
+      winsCount: game.winsCount[0] || null
     }));
   }
 }
