@@ -114,4 +114,25 @@ export class GamesService {
       take: 10
     });
   }
+
+  async getMyStatistic(userId: number) {
+    return this.prisma.game.findMany({
+      include: {
+        scores: {
+          where: {
+            userId
+          },
+          orderBy: {
+            value: 'desc'
+          },
+          take: 1
+        },
+        winsCount: {
+          where: {
+            userId
+          }
+        }
+      }
+    });
+  }
 }

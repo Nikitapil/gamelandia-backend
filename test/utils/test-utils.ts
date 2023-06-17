@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { PrismaService } from '../../src/prisma/prisma.service';
 import * as pactum from 'pactum';
 import { CreateUserDto } from '../../src/auth/dto/create-user.dto';
+import { LoginUserDto } from '../../src/auth/dto/login-user.dto';
 
 export const createTestApp = async (port: number) => {
   const moduleRef = await Test.createTestingModule({
@@ -32,6 +33,16 @@ export const registerUser = async (dto: CreateUserDto) => {
   return pactum
     .spec()
     .post('/auth/signup')
+    .withBody(dto)
+    .returns((ctx) => {
+      return ctx.res.body.accessToken;
+    });
+};
+
+export const loginUser = async (dto: LoginUserDto) => {
+  return pactum
+    .spec()
+    .post('/auth/signin')
     .withBody(dto)
     .returns((ctx) => {
       return ctx.res.body.accessToken;

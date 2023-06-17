@@ -1,6 +1,6 @@
 import { INestApplication } from '@nestjs/common';
 import * as pactum from 'pactum';
-import { createTestApp, registerUser } from './utils/test-utils';
+import { createTestApp, loginUser, registerUser } from './utils/test-utils';
 import { CreateScoreDto } from '../src/games/dto/score/create-score.dto';
 import { UpdateWinsCountDto } from '../src/games/dto/win-count/update-wins-count.dto';
 
@@ -249,6 +249,36 @@ describe('Games tests', () => {
         .expectStatus(200)
         .expectJson('[0].value', 2)
         .expectJsonLength(1);
+    });
+  });
+
+  describe('gameStatistic', () => {
+    let accessToken;
+
+    beforeAll(async () => {
+      accessToken = await loginUser({
+        email: 'test3@test.test',
+        password: '12345678'
+      });
+    });
+
+    it('should throw if unauthorized', () => {
+      return pactum.spec().get('/games/my_statistics').expectStatus(401);
+    });
+
+    it('should get statistics', () => {
+      return pactum
+        .spec()
+        .get('/games/my_statistics')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectStatus(200)
+        .expectBodyContains('numbers')
+        .expectBodyContains('battleship')
+        .expectBodyContains('chess')
+        .expectBodyContains('tetris')
+        .expectBodyContains('dyno');
     });
   });
 });

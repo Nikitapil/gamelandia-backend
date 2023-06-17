@@ -12,6 +12,7 @@ import {
 import { ScoreReturnDto } from './dto/score/score-return.dto';
 import { UpdateWinsCountDto } from './dto/win-count/update-wins-count.dto';
 import { LevelsGuard } from './guards/levels.guard';
+import { ReturnStatisticDto } from './dto/statistic/return-statistic.dto';
 
 @ApiTags('Games')
 @Controller('games')
@@ -63,5 +64,13 @@ export class GamesController {
   @Get('/win/:name')
   getWinnersByGameName(@Param('name') name: string) {
     return this.gamesService.getWinnersByGameName(name);
+  }
+
+  @ApiOperation({ summary: 'get user game statistics' })
+  @ApiResponse({ status: 200, type: [ReturnStatisticDto] })
+  @UseGuards(JwtGuard)
+  @Get('/my_statistics')
+  getMyStatistics(@User('id') userId: number) {
+    return this.gamesService.getMyStatistic(userId);
   }
 }
