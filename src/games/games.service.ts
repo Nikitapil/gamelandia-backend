@@ -116,7 +116,7 @@ export class GamesService {
   }
 
   async getMyStatistic(userId: number) {
-    return this.prisma.game.findMany({
+    const data = await this.prisma.game.findMany({
       include: {
         scores: {
           where: {
@@ -134,5 +134,10 @@ export class GamesService {
         }
       }
     });
+    return data.map((game) => ({
+      name: game.name,
+      score: game.scores[0] || null,
+      winsCount: game.winsCount[0]
+    }));
   }
 }
