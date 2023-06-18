@@ -5,6 +5,7 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Put,
   Res
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
@@ -16,6 +17,9 @@ import { Cookies } from '../decorators/Cookies.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { LogoutResponseDto } from './dto/logout-response.dto';
+import { GetRestoreKeyDto } from './dto/get-restore-key.dto';
+import { RestorePasswordDto } from './dto/restore-password.dto';
+import { ReturnRestoreKetDto } from './dto/return-restore-ket.dto';
 
 @ApiTags('Authorization')
 @Controller('auth')
@@ -95,5 +99,32 @@ export class AuthController {
   ) {
     res.clearCookie('refreshToken', { sameSite: 'none', secure: true });
     return this.authService.logout(token);
+  }
+
+  @ApiOperation({ summary: 'Get restore password key to email' })
+  @ApiResponse({ status: 201, type: ReturnRestoreKetDto })
+  @Post('/get_restore_password_key')
+  getRestorePasswordKey(@Body() dto: GetRestoreKeyDto) {
+    return this.authService.getRestorePasswordKey(dto.email);
+  }
+
+  @ApiOperation({ summary: 'Restore password' })
+  @ApiResponse({ status: 200, type: AuthResponseDto })
+  @Put('/restore_password')
+  async restorePassword(
+    @Body() dto: RestorePasswordDto,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const { user, refreshToken, accessToken } =
+      await this.authService.restorePassword(dto);
+
+    res.cookie('refreshToken', refreshToken, {
+      maxAge: COOKIE_EXPIRE_TIME,
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true
+    });
+
+    return { user, accessToken };
   }
 }
