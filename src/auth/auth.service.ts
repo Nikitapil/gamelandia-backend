@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -9,16 +10,23 @@ import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { IReturnUser } from './types/auth-types';
 import { JwtService } from '@nestjs/jwt';
-import * as process from 'process';
 import {
   ACCESS_TOKEN_EXPIRE_TIME,
   REFRESH_TOKEN_EXPIRE_TIME
 } from './constants/auth-constants';
 import { LoginUserDto } from './dto/login-user.dto';
+import { MailingService } from '../mailing/mailing.service';
+import { v4 } from 'uuid';
+import { getRestorePasswordTemplate } from './helpers/mail-templates';
+import { RestorePasswordDto } from './dto/restore-password.dto';
 
 @Injectable()
 export class AuthService {
-  constructor(private prisma: PrismaService, private jwtService: JwtService) {}
+  constructor(
+    private prisma: PrismaService,
+    private jwtService: JwtService,
+    private mailingService: MailingService
+  ) {}
 
   async signup(dto: CreateUserDto) {
     const candidate = await this.prisma.user.findFirst({
@@ -164,5 +172,70 @@ export class AuthService {
       refreshToken,
       user
     };
+  }
+
+  async getRestorePasswordKey(email: string) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        email
+      }
+    });
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    const restoreKey = v4();
+    const clientUrl = process.env.CLIENT_URL;
+
+    await this.prisma.user.update({
+      where: {
+        email
+      },
+      data: {
+        restoreKey
+      }
+    });
+
+    await this.mailingService.sendMail({
+      to: email,
+      subject: 'Restore password',
+      html: getRestorePasswordTemplate(restoreKey, clientUrl)
+    });
+
+    return { message: 'send' };
+  }
+
+  async restorePassword(dto: RestorePasswordDto) {
+    const user = await this.prisma.user.findUnique({
+      where: {
+        restoreKey: dto.key
+      }
+    });
+
+    if (!user) {
+      throw new BadRequestException('Invalid secret key');
+    }
+
+    const password = await bcrypt.hash(dto.password, 5);
+
+    const updatedUser = await this.prisma.user.update({
+      where: {
+        id: user.id
+      },
+      data: {
+        password,
+        restoreKey: null
+      },
+      select: {
+        id: true,
+        email: true,
+        username: true
+      }
+    });
+
+    const userData = await this.generateUserDataWithTokens(updatedUser);
+
+    return userData;
   }
 }
