@@ -75,13 +75,14 @@ model Quiz {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
+  name      String         @default("Untitled")
   questions QuizQuestion[]
   rating    QuizRating[]
 
   favouritedBy FavoritesQuizesOnUser[]
 
   User   User? @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId Int
+  userId Int?
 }
 
 model QuizQuestion {
