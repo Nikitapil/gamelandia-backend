@@ -116,9 +116,9 @@ model QuizRating {
 }
 
 model FavoritesQuizesOnUser {
-  User   User   @relation(fields: [userId], references: [id])
+  User   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
-  Quiz   Quiz   @relation(fields: [quizId], references: [id])
+  Quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
   quizId String
 
   @@id([userId, quizId])

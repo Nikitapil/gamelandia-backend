@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { QuizesService } from './quizes.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
@@ -26,5 +26,31 @@ export class QuizesController {
   @Get('/all')
   getAllQuizes(@Body() dto: GetAllQuizesDto, @User('id') userId: number) {
     return this.quizesService.getAllQuizes(dto, userId);
+  }
+
+  @UseGuards(JwtGuard)
+  @Get('/quiz/:id')
+  getQuiz(@Param('id') quizId: string) {
+    return this.quizesService.getQuiz(quizId);
+  }
+
+  @Get('/play/:id')
+  getPlayQuiz(@Param('id') quizId: string) {
+    return this.quizesService.getPlayQuiz(quizId);
+  }
+
+  @Get('/question/:id')
+  getCorrectAnswer(@Param('id') questionId: string) {
+    return this.quizesService.getCorrectAnswer(questionId);
+  }
+
+  @Get('/categories')
+  getCategories() {
+    return this.quizesService.getCategories();
+  }
+
+  @Get('/categories/count/:id')
+  getCategoriesQuestionCount(@Param('id') categoryId: string) {
+    return this.quizesService.getCategoryQuestionsCount(categoryId);
   }
 }

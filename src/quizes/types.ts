@@ -1,4 +1,4 @@
-import { FavoritesQuizesOnUser, Quiz } from '@prisma/client';
+import { FavoritesQuizesOnUser, Quiz, QuizQuestion } from '@prisma/client';
 
 export interface IGeneratedQuestion {
   category: string;
@@ -14,3 +14,18 @@ export type TAllQuizesItem = Quiz & {
   _count: { questions: number };
   User?: { username: string };
 };
+
+export type TQuizWithQuestions = Quiz & { questions: QuizQuestion[] };
+
+export interface IPlayQuestion {
+  id: string;
+  question: string;
+  answers: string[];
+}
+
+export interface ICategoryResponse {
+  trivia_categories: {
+    id: number;
+    name: string;
+  }[];
+}
