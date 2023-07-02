@@ -1,7 +1,7 @@
-import { TAllQuizesItem } from '../types';
+import { TAllQuizesItem, TRatingResponseFromDb } from '../types';
 
 export class ManyQuizesDto {
-  constructor(quiz: TAllQuizesItem) {
+  constructor(quiz: TAllQuizesItem, ratings: TRatingResponseFromDb) {
     this.id = quiz.id;
     this.createdAt = quiz.createdAt;
     this.updatedAt = quiz.updatedAt;
@@ -11,6 +11,7 @@ export class ManyQuizesDto {
     this.isInFavourites = !!quiz.favouritedBy.length;
     this.questionsCount = quiz._count.questions;
     this.author = quiz.User?.username || null;
+    this.getRating(ratings);
   }
 
   id: string;
@@ -22,4 +23,10 @@ export class ManyQuizesDto {
   isInFavourites: boolean;
   questionsCount: number;
   author: string | null;
+  rating: number | null;
+
+  private getRating(ratings: TRatingResponseFromDb) {
+    const rating = ratings.find((rate) => rate.quizId === this.id);
+    this.rating = rating?._avg?.rating || null;
+  }
 }

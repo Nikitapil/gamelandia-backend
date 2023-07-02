@@ -6,14 +6,24 @@ import {
 import { HttpService } from '@nestjs/axios';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { mapGeneratedQuestions } from './helpers/quiz-mappers';
-import { ICategoryResponse, IGeneratedQuestion } from './types';
+import {
+  ICategoryResponse,
+  IGeneratedQuestion,
+  IGetQuizesParams,
+  TQuizWhereInput
+} from './types';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
 import { AllQuizesReturnDto } from './dto/all-quizes-return.dto';
 import { ManyQuizesDto } from './dto/many-quizes.dto';
 import { CreateQuizDto } from './dto/create-quiz.dto';
-import { validateQuizQuestions } from './helpers/validators';
+import {
+  validateQuizForUser,
+  validateQuizQuestions
+} from './helpers/validators';
 import { PlayQuizDto } from './dto/play-quiz.dto';
+import { EditQuizDto } from './dto/edit-quiz.dto';
+import { RateQuizDto } from './dto/rate-quiz.dto';
 
 @Injectable()
 export class QuizesService {
@@ -21,6 +31,55 @@ export class QuizesService {
     private readonly httpService: HttpService,
     private readonly prismaService: PrismaService
   ) {}
+
+  private async getManyQuizes({ dto, userId, where }: IGetQuizesParams) {
+    const { page = 1, limit = 10, search = '' } = dto;
+    const offset = page * limit - limit;
+
+    where.name = {
+      contains: search
+    };
+
+    const totalCount = await this.prismaService.quiz.count({ where });
+    const quizes = await this.prismaService.quiz.findMany({
+      where,
+      skip: offset,
+      take: limit,
+      include: {
+        _count: {
+          select: {
+            questions: true
+          }
+        },
+        favouritedBy: {
+          where: {
+            userId: userId || 0
+          }
+        },
+        User: {
+          select: {
+            username: true
+          }
+        }
+      }
+    });
+    const ratings = await this.prismaService.quizRating.groupBy({
+      by: ['quizId'],
+      where: {
+        quizId: {
+          in: quizes.map((q) => q.id)
+        }
+      },
+      _avg: {
+        rating: true
+      }
+    });
+
+    return {
+      quizes: quizes.map((quiz) => new ManyQuizesDto(quiz, ratings)),
+      totalCount
+    };
+  }
 
   async generateQuiz(dto: GenerateQuizDto) {
     const { data } = await this.httpService.axiosRef.get<{
@@ -51,9 +110,7 @@ export class QuizesService {
     dto: GetAllQuizesDto,
     userId?: number
   ): Promise<AllQuizesReturnDto> {
-    const { page = 1, limit = 10, search = '' } = dto;
-    const offset = page * limit - limit;
-    const where = {
+    const where: TQuizWhereInput = {
       OR: [
         {
           isPrivate: false
@@ -61,41 +118,25 @@ export class QuizesService {
         {
           userId
         }
-      ],
-      name: {
-        contains: search
-      }
+      ]
+    };
+    return this.getManyQuizes({ dto, userId, where });
+  }
+
+  async getUserQuizes(
+    dto: GetAllQuizesDto,
+    userId: number,
+    currentUserId?: number
+  ) {
+    const where: TQuizWhereInput = {
+      userId
     };
 
-    const totalCount = await this.prismaService.quiz.count({ where });
+    if (userId !== currentUserId) {
+      where.isPrivate = false;
+    }
 
-    const quizes = await this.prismaService.quiz.findMany({
-      where,
-      skip: offset,
-      take: limit,
-      include: {
-        _count: {
-          select: {
-            questions: true
-          }
-        },
-        favouritedBy: {
-          where: {
-            userId
-          }
-        },
-        User: {
-          select: {
-            username: true
-          }
-        }
-      }
-    });
-
-    return {
-      quizes: quizes.map((quiz) => new ManyQuizesDto(quiz)),
-      totalCount
-    };
+    return this.getManyQuizes({ dto, userId: currentUserId, where });
   }
 
   async createQuiz(dto: CreateQuizDto, userId: number) {
@@ -130,11 +171,22 @@ export class QuizesService {
       }
     });
 
+    const rating = await this.prismaService.quizRating.aggregate({
+      where: {
+        quizId
+      },
+      _avg: {
+        rating: true
+      }
+    });
+
+    console.log(rating);
+
     if (!quiz) {
       throw new NotFoundException('quiz_not_found');
     }
 
-    return quiz;
+    return { ...quiz, rating: rating._avg.rating };
   }
 
   async getPlayQuiz(quizId: string) {
@@ -174,5 +226,152 @@ export class QuizesService {
     } catch (e) {
       throw new BadRequestException('error_fetching_questions_count');
     }
+  }
+
+  async deleteQuiz(quizId: string, userId: number) {
+    const quiz = await this.prismaService.quiz.findUnique({
+      where: {
+        id: quizId
+      }
+    });
+
+    validateQuizForUser(userId, quiz);
+
+    await this.prismaService.quiz.delete({
+      where: {
+        id: quizId
+      }
+    });
+    return { message: 'success' };
+  }
+
+  async editQuiz(dto: EditQuizDto, userId: number) {
+    const quiz = await this.prismaService.quiz.findUnique({
+      where: {
+        id: dto.id
+      }
+    });
+
+    validateQuizForUser(userId, quiz);
+    validateQuizQuestions(dto.questions);
+
+    try {
+      await this.prismaService.quiz.update({
+        where: {
+          id: dto.id
+        },
+        data: {
+          userId,
+          name: dto.name,
+          isPrivate: dto.isPrivate,
+          questions: {
+            deleteMany: {
+              quizId: dto.id
+            },
+            createMany: {
+              data: dto.questions
+            }
+          }
+        }
+      });
+
+      return { message: 'edited' };
+    } catch (e) {
+      throw new BadRequestException('Error while creating quiz');
+    }
+  }
+
+  async rateQuiz(dto: RateQuizDto, userId: number) {
+    const quiz = await this.prismaService.quiz.findUnique({
+      where: {
+        id: dto.quizId
+      }
+    });
+
+    if (!quiz) {
+      throw new NotFoundException();
+    }
+
+    await this.prismaService.quizRating.upsert({
+      where: {
+        uniq_combination: { quizId: dto.quizId, userId }
+      },
+      create: {
+        userId,
+        quizId: dto.quizId,
+        rating: dto.rating
+      },
+      update: {
+        rating: dto.rating
+      }
+    });
+
+    return { message: 'rated' };
+  }
+
+  private getFavouriteQuizOnUser(quizId: string, userId: number) {
+    return this.prismaService.favoritesQuizesOnUser.findUnique({
+      where: {
+        userId_quizId: {
+          quizId,
+          userId
+        }
+      }
+    });
+  }
+
+  async addQuizToFavourites(quizId: string, userId: number) {
+    const quiz = await this.prismaService.quiz.findUnique({
+      where: {
+        id: quizId
+      }
+    });
+
+    if (!quiz) {
+      throw new NotFoundException('quiz_not_found');
+    }
+
+    const candidate = await this.getFavouriteQuizOnUser(quizId, userId);
+    if (candidate) {
+      throw new BadRequestException('already_in_favourites');
+    }
+    await this.prismaService.favoritesQuizesOnUser.create({
+      data: {
+        quizId,
+        userId
+      }
+    });
+
+    return { message: 'success' };
+  }
+
+  async removeQuizFromFavourites(quizId: string, userId: number) {
+    const candidate = await this.getFavouriteQuizOnUser(quizId, userId);
+
+    if (!candidate) {
+      throw new BadRequestException('not_in_favourites');
+    }
+
+    await this.prismaService.favoritesQuizesOnUser.delete({
+      where: {
+        userId_quizId: {
+          userId,
+          quizId
+        }
+      }
+    });
+
+    return { message: 'success' };
+  }
+
+  async getFavouritesQuizes(dto: GetAllQuizesDto, userId: number) {
+    const where: TQuizWhereInput = {
+      favouritedBy: {
+        some: {
+          userId
+        }
+      }
+    };
+    return this.getManyQuizes({ dto, userId, where });
   }
 }

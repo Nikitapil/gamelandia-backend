@@ -1,4 +1,10 @@
-import { FavoritesQuizesOnUser, Quiz, QuizQuestion } from '@prisma/client';
+import {
+  FavoritesQuizesOnUser,
+  Quiz,
+  QuizQuestion,
+  Prisma
+} from '@prisma/client';
+import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
 
 export interface IGeneratedQuestion {
   category: string;
@@ -29,3 +35,16 @@ export interface ICategoryResponse {
     name: string;
   }[];
 }
+
+export type TQuizWhereInput = Prisma.QuizWhereInput;
+
+export interface IGetQuizesParams {
+  dto: GetAllQuizesDto;
+  userId: number;
+  where: TQuizWhereInput;
+}
+
+export type TRatingResponseFromDb = (Prisma.PickArray<
+  Prisma.QuizRatingGroupByOutputType,
+  'quizId'[]
+> & { _avg: { rating: number } })[];
