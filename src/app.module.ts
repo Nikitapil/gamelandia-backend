@@ -7,6 +7,13 @@ import { MailingModule } from './mailing/mailing.module';
 import { QuizesModule } from './quizes/quizes.module';
 
 @Module({
-  imports: [AuthModule, PrismaModule, GamesModule, UsersModule, MailingModule, QuizesModule]
+  imports: [
+    AuthModule,
+    PrismaModule,
+    GamesModule,
+    UsersModule,
+    MailingModule,
+    QuizesModule
+  ]
 })
 export class AppModule {}

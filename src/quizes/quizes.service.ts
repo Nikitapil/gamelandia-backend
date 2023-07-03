@@ -7,6 +7,7 @@ import { HttpService } from '@nestjs/axios';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { mapGeneratedQuestions } from './helpers/quiz-mappers';
 import {
+  ICategoryQuestionResponse,
   ICategoryResponse,
   IGeneratedQuestion,
   IGetQuizesParams,
@@ -24,6 +25,12 @@ import {
 import { PlayQuizDto } from './dto/play-quiz.dto';
 import { EditQuizDto } from './dto/edit-quiz.dto';
 import { RateQuizDto } from './dto/rate-quiz.dto';
+import { ReturnGeneratedQuizDto } from './dto/return-generated-quiz.dto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
+import { SingleQuizReturnDto } from './dto/single-quiz-return.dto';
+import { CorrectAnswerReturnDto } from './dto/correct-answer-return.dto';
+import { QuizCategoriesReturnDto } from './dto/quiz-categories-return.dto';
+import { CategoryCountReturnDto } from './dto/category-count-return.dto';
 
 @Injectable()
 export class QuizesService {
@@ -32,7 +39,11 @@ export class QuizesService {
     private readonly prismaService: PrismaService
   ) {}
 
-  private async getManyQuizes({ dto, userId, where }: IGetQuizesParams) {
+  private async getManyQuizes({
+    dto,
+    userId,
+    where
+  }: IGetQuizesParams): Promise<AllQuizesReturnDto> {
     const { page = 1, limit = 10, search = '' } = dto;
     const offset = page * limit - limit;
 
@@ -81,7 +92,7 @@ export class QuizesService {
     };
   }
 
-  async generateQuiz(dto: GenerateQuizDto) {
+  async generateQuiz(dto: GenerateQuizDto): Promise<ReturnGeneratedQuizDto> {
     const { data } = await this.httpService.axiosRef.get<{
       results: IGeneratedQuestion[];
     }>('https://opentdb.com/api.php?', {
@@ -139,7 +150,10 @@ export class QuizesService {
     return this.getManyQuizes({ dto, userId: currentUserId, where });
   }
 
-  async createQuiz(dto: CreateQuizDto, userId: number) {
+  async createQuiz(
+    dto: CreateQuizDto,
+    userId: number
+  ): Promise<SuccessMessageDto> {
     validateQuizQuestions(dto.questions);
     try {
       await this.prismaService.quiz.create({
@@ -155,13 +169,13 @@ export class QuizesService {
         }
       });
 
-      return { message: 'created' };
+      return { message: 'success' };
     } catch (e) {
       throw new BadRequestException('Error while creating quiz');
     }
   }
 
-  async getQuiz(quizId: string) {
+  async getQuiz(quizId: string): Promise<SingleQuizReturnDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
@@ -180,8 +194,6 @@ export class QuizesService {
       }
     });
 
-    console.log(rating);
-
     if (!quiz) {
       throw new NotFoundException('quiz_not_found');
     }
@@ -194,7 +206,7 @@ export class QuizesService {
     return new PlayQuizDto(quiz);
   }
 
-  async getCorrectAnswer(questionId: string) {
+  async getCorrectAnswer(questionId: string): Promise<CorrectAnswerReturnDto> {
     const question = await this.prismaService.quizQuestion.findUnique({
       where: { id: questionId }
     });
@@ -206,7 +218,7 @@ export class QuizesService {
     return { answer: question.correctAnswer };
   }
 
-  async getCategories() {
+  async getCategories(): Promise<QuizCategoriesReturnDto[]> {
     try {
       const { data } = await this.httpService.axiosRef.get<ICategoryResponse>(
         'https://opentdb.com/api_category.php'
@@ -217,12 +229,15 @@ export class QuizesService {
     }
   }
 
-  async getCategoryQuestionsCount(categoryId: string) {
+  async getCategoryQuestionsCount(
+    categoryId: string
+  ): Promise<CategoryCountReturnDto> {
     try {
-      const { data } = await this.httpService.axiosRef.get<ICategoryResponse>(
-        `https://opentdb.com/api_count.php?category=${categoryId}`
-      );
-      return data;
+      const { data } =
+        await this.httpService.axiosRef.get<ICategoryQuestionResponse>(
+          `https://opentdb.com/api_count.php?category=${categoryId}`
+        );
+      return data.category_question_count;
     } catch (e) {
       throw new BadRequestException('error_fetching_questions_count');
     }
@@ -245,7 +260,7 @@ export class QuizesService {
     return { message: 'success' };
   }
 
-  async editQuiz(dto: EditQuizDto, userId: number) {
+  async editQuiz(dto: EditQuizDto, userId: number): Promise<SuccessMessageDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: dto.id
@@ -275,13 +290,13 @@ export class QuizesService {
         }
       });
 
-      return { message: 'edited' };
+      return { message: 'success' };
     } catch (e) {
       throw new BadRequestException('Error while creating quiz');
     }
   }
 
-  async rateQuiz(dto: RateQuizDto, userId: number) {
+  async rateQuiz(dto: RateQuizDto, userId: number): Promise<SuccessMessageDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: dto.quizId
@@ -306,7 +321,7 @@ export class QuizesService {
       }
     });
 
-    return { message: 'rated' };
+    return { message: 'success' };
   }
 
   private getFavouriteQuizOnUser(quizId: string, userId: number) {
@@ -320,7 +335,10 @@ export class QuizesService {
     });
   }
 
-  async addQuizToFavourites(quizId: string, userId: number) {
+  async addQuizToFavourites(
+    quizId: string,
+    userId: number
+  ): Promise<SuccessMessageDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
@@ -345,7 +363,10 @@ export class QuizesService {
     return { message: 'success' };
   }
 
-  async removeQuizFromFavourites(quizId: string, userId: number) {
+  async removeQuizFromFavourites(
+    quizId: string,
+    userId: number
+  ): Promise<SuccessMessageDto> {
     const candidate = await this.getFavouriteQuizOnUser(quizId, userId);
 
     if (!candidate) {

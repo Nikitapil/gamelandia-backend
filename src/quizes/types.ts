@@ -48,3 +48,15 @@ export type TRatingResponseFromDb = (Prisma.PickArray<
   Prisma.QuizRatingGroupByOutputType,
   'quizId'[]
 > & { _avg: { rating: number } })[];
+
+export interface ICategoryQuestionResponse {
+  category_id: number;
+  category_question_count: CategoryQuestionCount;
+}
+
+export interface CategoryQuestionCount {
+  total_question_count: number;
+  total_easy_question_count: number;
+  total_medium_question_count: number;
+  total_hard_question_count: number;
+}
