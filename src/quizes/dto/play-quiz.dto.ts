@@ -1,6 +1,7 @@
-import { IPlayQuestion, TQuizWithQuestions } from '../types';
+import { TQuizWithQuestions } from '../types';
 import { mapQuestionsToPlayQuestions } from '../helpers/quiz-mappers';
 import { ApiProperty } from '@nestjs/swagger';
+import { PlayQuestionDto } from './play-question.dto';
 
 export class PlayQuizDto {
   @ApiProperty({ description: 'quiz id', type: String })
@@ -11,7 +12,9 @@ export class PlayQuizDto {
 
   @ApiProperty({ description: 'quiz privacy', type: Boolean })
   isPrivate: boolean;
-  questions: IPlayQuestion[];
+
+  @ApiProperty({ description: 'quiz questions', type: [PlayQuestionDto] })
+  questions: PlayQuestionDto[];
 
   constructor(quiz: TQuizWithQuestions) {
     this.id = quiz.id;

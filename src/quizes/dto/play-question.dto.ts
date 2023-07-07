@@ -8,5 +8,5 @@ export class PlayQuestionDto {
   question: string;
 
   @ApiProperty({ description: 'question answers', type: [String] })
-  answer: string[];
+  answers: string[];
 }

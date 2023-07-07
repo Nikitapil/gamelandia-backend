@@ -2,13 +2,13 @@ import {
   Body,
   Controller,
   Delete,
-  Get,
+  Get, HttpCode,
   Param,
   ParseIntPipe,
   Post,
   Put,
   UseGuards
-} from '@nestjs/common';
+} from "@nestjs/common";
 import { QuizesService } from './quizes.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
@@ -50,8 +50,9 @@ export class QuizesController {
 
   @ApiOperation({ summary: 'Get all available quizes' })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
+  @HttpCode(200)
   @UseGuards(ApplyUserGuard)
-  @Get('/all')
+  @Post('/all')
   getAllQuizes(@Body() dto: GetAllQuizesDto, @User('id') userId?: number) {
     return this.quizesService.getAllQuizes(dto, userId);
   }
@@ -95,7 +96,7 @@ export class QuizesController {
   @ApiOperation({ summary: 'Get user quizes' })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
   @UseGuards(ApplyUserGuard)
-  @Get('/user/:id')
+  @Post('/user/:id')
   getQuizesByUser(
     @Body() dto: GetAllQuizesDto,
     @Param('id', ParseIntPipe) userId,
@@ -131,7 +132,7 @@ export class QuizesController {
   @ApiOperation({ summary: 'Get all quizes from favourites' })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
   @UseGuards(JwtGuard)
-  @Get('/favourite')
+  @Post('/favourite')
   getFavouritesQuizes(
     @Body() dto: GetAllQuizesDto,
     @User('id') userId: number
