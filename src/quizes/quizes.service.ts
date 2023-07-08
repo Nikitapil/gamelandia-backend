@@ -52,6 +52,7 @@ export class QuizesService {
     };
 
     const totalCount = await this.prismaService.quiz.count({ where });
+    console.log(limit);
     const quizes = await this.prismaService.quiz.findMany({
       where,
       skip: offset,
@@ -185,6 +186,10 @@ export class QuizesService {
       }
     });
 
+    if (!quiz) {
+      throw new NotFoundException('quiz_not_found');
+    }
+
     const rating = await this.prismaService.quizRating.aggregate({
       where: {
         quizId
@@ -193,10 +198,6 @@ export class QuizesService {
         rating: true
       }
     });
-
-    if (!quiz) {
-      throw new NotFoundException('quiz_not_found');
-    }
 
     return { ...quiz, rating: rating._avg.rating };
   }

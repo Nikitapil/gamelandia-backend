@@ -2,13 +2,14 @@ import {
   Body,
   Controller,
   Delete,
-  Get, HttpCode,
+  Get,
+  HttpCode,
   Param,
   ParseIntPipe,
   Post,
   Put,
   UseGuards
-} from "@nestjs/common";
+} from '@nestjs/common';
 import { QuizesService } from './quizes.service';
 import { GenerateQuizDto } from './dto/generate-quiz.dto';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
@@ -95,6 +96,7 @@ export class QuizesController {
 
   @ApiOperation({ summary: 'Get user quizes' })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
+  @HttpCode(200)
   @UseGuards(ApplyUserGuard)
   @Post('/user/:id')
   getQuizesByUser(
