@@ -52,7 +52,6 @@ export class QuizesService {
     };
 
     const totalCount = await this.prismaService.quiz.count({ where });
-    console.log(limit);
     const quizes = await this.prismaService.quiz.findMany({
       where,
       skip: offset,

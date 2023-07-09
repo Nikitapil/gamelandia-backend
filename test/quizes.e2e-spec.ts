@@ -3,6 +3,8 @@ import { createTestApp, loginUser, registerUser } from './utils/test-utils';
 import * as pactum from 'pactum';
 import { CreateQuizDto } from '../src/quizes/dto/create-quiz.dto';
 import { GetAllQuizesDto } from '../src/quizes/dto/get-all-quizes.dto';
+import { EditQuizDto } from '../src/quizes/dto/edit-quiz.dto';
+import { RateQuizDto } from '../src/quizes/dto/rate-quiz.dto';
 
 describe('Quizes tests', () => {
   let app: INestApplication;
@@ -386,6 +388,226 @@ describe('Quizes tests', () => {
         })
         .post('/quizes/all')
         .expectJson('totalCount', 1);
+    });
+  });
+
+  describe('edit quiz', () => {
+    let accessToken;
+    let dto: EditQuizDto;
+
+    beforeEach(() => {
+      dto = {
+        id: '123',
+        name: 'New Test Quiz',
+        isPrivate: false,
+        questions: [
+          {
+            question: 'Test?',
+            correctAnswer: 'Test correct answer',
+            incorrectAnswers: ['123', '456', '789']
+          },
+          {
+            question: 'Test2?',
+            correctAnswer: 'Test correct answer',
+            incorrectAnswers: ['123', '456', '789']
+          },
+          {
+            question: 'Test3?',
+            correctAnswer: 'Test correct answer',
+            incorrectAnswers: ['123', '456', '789']
+          }
+        ]
+      };
+    });
+
+    beforeAll(async () => {
+      accessToken = await loginUser({
+        email: 'quiz@quiz.quiz',
+        password: '12345678'
+      });
+    });
+
+    it('should throw for unauthorized', () => {
+      return pactum.spec().put('/quizes/edit').expectStatus(401);
+    });
+
+    it('should throw for unknown quiz id', () => {
+      return pactum
+        .spec()
+        .put('/quizes/edit')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(404);
+    });
+
+    it('should edit quiz successfully', async () => {
+      const quizes = await pactum
+        .spec()
+        .post('/quizes/all')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .returns((ctx) => ctx.res.body.quizes);
+
+      const quiz = quizes[0];
+
+      dto.id = quiz.id;
+
+      await pactum
+        .spec()
+        .put('/quizes/edit')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .withBody(dto)
+        .expectStatus(200)
+        .expectJson('message', 'success');
+
+      return pactum
+        .spec()
+        .post('/quizes/all')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectStatus(200)
+        .expectBodyContains('New Test Quiz');
+    });
+  });
+
+  describe('rateQuiz', () => {
+    let accessToken;
+    const dto: RateQuizDto = {
+      quizId: '123',
+      rating: 5
+    };
+
+    beforeAll(async () => {
+      accessToken = await loginUser({
+        email: 'quiz@quiz.quiz',
+        password: '12345678'
+      });
+    });
+
+    it('should throw for unauthorized', () => {
+      pactum.spec().post('/quizes/rate').expectStatus(401);
+    });
+
+    it('should throw for unknown quiz', () => {
+      pactum
+        .spec()
+        .post('/quizes/rate')
+        .withBody(dto)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectStatus(404);
+    });
+
+    it('should rate quiz successfully', async () => {
+      const quizes = await pactum
+        .spec()
+        .post('/quizes/all')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .returns((ctx) => ctx.res.body.quizes);
+
+      const quiz = quizes[0];
+
+      dto.quizId = quiz.id;
+
+      await pactum
+        .spec()
+        .post('/quizes/rate')
+        .withBody(dto)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectJson('message', 'success');
+
+      return pactum
+        .spec()
+        .get(`/quizes/quiz/${quiz.id}`)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectStatus(200)
+        .expectJson('rating', 5);
+    });
+  });
+
+  describe('favourites quizes', () => {
+    let accessToken;
+
+    beforeAll(async () => {
+      accessToken = await loginUser({
+        email: 'quiz@quiz.quiz',
+        password: '12345678'
+      });
+    });
+
+    it('should throw for unauthorized methods', async () => {
+      await pactum.spec().post('/quizes/favourite').expectStatus(401);
+      await pactum.spec().post('/quizes/favourite/123').expectStatus(401);
+      await pactum.spec().delete('/quizes/favourite/123').expectStatus(401);
+    });
+
+    it('should add quiz to favourites and return it', async () => {
+      const quizes = await pactum
+        .spec()
+        .post('/quizes/all')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .returns((ctx) => ctx.res.body.quizes);
+
+      const quiz = quizes[0];
+
+      await pactum
+        .spec()
+        .post(`/quizes/favourite/${quiz.id}`)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectJson('message', 'success');
+
+      return pactum
+        .spec()
+        .post(`/quizes/favourite`)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectJson('totalCount', 1);
+    });
+
+    it('should remove quiz from favourites', async () => {
+      const quizes = await pactum
+        .spec()
+        .post('/quizes/all')
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .returns((ctx) => ctx.res.body.quizes);
+
+      const quiz = quizes[0];
+
+      await pactum
+        .spec()
+        .delete(`/quizes/favourite/${quiz.id}`)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectJson('message', 'success');
+
+      return pactum
+        .spec()
+        .post(`/quizes/favourite`)
+        .withHeaders({
+          Authorization: `Bearer ${accessToken}`
+        })
+        .expectJson('totalCount', 0);
     });
   });
 });
