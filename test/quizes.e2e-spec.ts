@@ -1,5 +1,10 @@
 import { INestApplication } from '@nestjs/common';
-import { createTestApp, loginUser, registerUser } from './utils/test-utils';
+import {
+  createTestApp,
+  getFirstQuiz,
+  loginUser,
+  registerUser
+} from './utils/test-utils';
 import * as pactum from 'pactum';
 import { CreateQuizDto } from '../src/quizes/dto/create-quiz.dto';
 import { GetAllQuizesDto } from '../src/quizes/dto/get-all-quizes.dto';
@@ -261,15 +266,7 @@ describe('Quizes tests', () => {
     });
 
     it('should return play quiz with questions', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .withHeaders({
-          Authorization: `Bearer ${accessToken}`
-        })
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       return pactum
         .spec()
@@ -285,12 +282,7 @@ describe('Quizes tests', () => {
 
   describe('getCorrectAnswer', () => {
     it('should return correct answer', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz('');
 
       const questions = await pactum
         .spec()
@@ -318,12 +310,7 @@ describe('Quizes tests', () => {
     });
 
     it('should return quizes by user without private', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       return pactum
         .spec()
@@ -333,12 +320,7 @@ describe('Quizes tests', () => {
     });
 
     it('should return quizes by user with private for authorized', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       return pactum
         .spec()
@@ -366,12 +348,7 @@ describe('Quizes tests', () => {
     });
 
     it('should delete quiz', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       await pactum
         .spec()
@@ -443,15 +420,7 @@ describe('Quizes tests', () => {
     });
 
     it('should edit quiz successfully', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .withHeaders({
-          Authorization: `Bearer ${accessToken}`
-        })
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       dto.id = quiz.id;
 
@@ -506,15 +475,7 @@ describe('Quizes tests', () => {
     });
 
     it('should rate quiz successfully', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .withHeaders({
-          Authorization: `Bearer ${accessToken}`
-        })
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       dto.quizId = quiz.id;
 
@@ -555,15 +516,7 @@ describe('Quizes tests', () => {
     });
 
     it('should add quiz to favourites and return it', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .withHeaders({
-          Authorization: `Bearer ${accessToken}`
-        })
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       await pactum
         .spec()
@@ -583,15 +536,7 @@ describe('Quizes tests', () => {
     });
 
     it('should remove quiz from favourites', async () => {
-      const quizes = await pactum
-        .spec()
-        .post('/quizes/all')
-        .withHeaders({
-          Authorization: `Bearer ${accessToken}`
-        })
-        .returns((ctx) => ctx.res.body.quizes);
-
-      const quiz = quizes[0];
+      const quiz = await getFirstQuiz(accessToken);
 
       await pactum
         .spec()
