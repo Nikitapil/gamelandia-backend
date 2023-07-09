@@ -48,3 +48,15 @@ export const loginUser = async (dto: LoginUserDto) => {
       return ctx.res.body.accessToken;
     });
 };
+
+export const getFirstQuiz = async (accessToken: string) => {
+  const quizes = await pactum
+    .spec()
+    .post('/quizes/all')
+    .withHeaders({
+      Authorization: `Bearer ${accessToken}`
+    })
+    .returns((ctx) => ctx.res.body.quizes);
+
+  return quizes[0];
+};
