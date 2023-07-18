@@ -48,7 +48,8 @@ export class QuizesService {
     const offset = page * limit - limit;
 
     where.name = {
-      contains: search
+      contains: search,
+      mode: 'insensitive'
     };
 
     const totalCount = await this.prismaService.quiz.count({ where });
