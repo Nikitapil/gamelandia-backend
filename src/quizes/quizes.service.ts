@@ -57,6 +57,9 @@ export class QuizesService {
       where,
       skip: offset,
       take: limit,
+      orderBy: {
+        updatedAt: 'desc'
+      },
       include: {
         _count: {
           select: {
