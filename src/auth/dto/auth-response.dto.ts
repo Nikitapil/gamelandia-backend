@@ -1,20 +1,17 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IReturnUser } from '../types/auth-types';
+import { UserReturnDto } from './user-return.dto';
 
 export class AuthResponseDto {
   @ApiProperty({
     example: 'asdsfdsfdf.dsfasdfasdfsadfsadf.sdfsadfsdf',
-    description: 'access token for user validation'
+    description: 'access token for user validation',
+    type: String
   })
   accessToken: string;
 
   @ApiProperty({
-    example: {
-      id: 1,
-      email: 'test@test.test',
-      username: 'Nick'
-    },
-    description: 'Object with user data'
+    description: 'Object with user data',
+    type: UserReturnDto
   })
-  user: IReturnUser;
+  user: UserReturnDto;
 }

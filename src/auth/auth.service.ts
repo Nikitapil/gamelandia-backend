@@ -8,7 +8,6 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
-import { IReturnUser } from './types/auth-types';
 import { JwtService } from '@nestjs/jwt';
 import {
   ACCESS_TOKEN_EXPIRE_TIME,
@@ -19,6 +18,7 @@ import { MailingService } from '../mailing/mailing.service';
 import { v4 } from 'uuid';
 import { getRestorePasswordTemplate } from './helpers/mail-templates';
 import { RestorePasswordDto } from './dto/restore-password.dto';
+import { UserReturnDto } from './dto/user-return.dto';
 
 @Injectable()
 export class AuthService {
@@ -48,7 +48,8 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        username: true
+        username: true,
+        role: true
       }
     });
     const userData = await this.generateUserDataWithTokens(user);
@@ -72,10 +73,11 @@ export class AuthService {
       throw new NotFoundException('user_not_found');
     }
 
-    const userPayload: IReturnUser = {
+    const userPayload: UserReturnDto = {
       id: user.id,
       email: user.email,
-      username: user.username
+      username: user.username,
+      role: user.role
     };
 
     const userData = await this.generateUserDataWithTokens(userPayload);
@@ -103,7 +105,8 @@ export class AuthService {
       const userData = await this.generateUserDataWithTokens({
         id: user.id,
         email: user.email,
-        username: user.username
+        username: user.username,
+        role: user.role
       });
 
       return userData;
@@ -126,7 +129,7 @@ export class AuthService {
     }
   }
 
-  private async updateRefreshToken(user: IReturnUser) {
+  private async updateRefreshToken(user: UserReturnDto) {
     const refreshToken = this.jwtService.sign(user, {
       secret: process.env.REFRESH_SECRET,
       expiresIn: REFRESH_TOKEN_EXPIRE_TIME
@@ -159,7 +162,7 @@ export class AuthService {
     return refreshToken;
   }
 
-  private async generateUserDataWithTokens(user: IReturnUser) {
+  private async generateUserDataWithTokens(user: UserReturnDto) {
     const accessToken = this.jwtService.sign(user, {
       secret: process.env.ACCESS_SECRET,
       expiresIn: ACCESS_TOKEN_EXPIRE_TIME
@@ -230,7 +233,8 @@ export class AuthService {
       select: {
         id: true,
         email: true,
-        username: true
+        username: true,
+        role: true
       }
     });
 

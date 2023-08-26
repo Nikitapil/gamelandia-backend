@@ -6,13 +6,13 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { EditUserDto } from './dto/edit-user.dto';
 import * as bcrypt from 'bcryptjs';
-import { IReturnUser } from '../auth/types/auth-types';
+import { UserReturnDto } from '../auth/dto/user-return.dto';
 
 @Injectable()
 export class UsersService {
   constructor(private prisma: PrismaService) {}
 
-  async editUser(dto: EditUserDto, userId: number): Promise<IReturnUser> {
+  async editUser(dto: EditUserDto, userId: number): Promise<UserReturnDto> {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId
@@ -48,7 +48,8 @@ export class UsersService {
     return {
       id: updatedUser.id,
       username: updatedUser.username,
-      email: updatedUser.email
+      email: updatedUser.email,
+      role: updatedUser.role
     };
   }
 }

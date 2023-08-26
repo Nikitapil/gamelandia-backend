@@ -7,15 +7,21 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  User
+  Admin
+}
+
 model User {
   id        Int      @id @default(autoincrement())
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  email      String  @unique
+  email      String   @unique
   password   String
   username   String
-  restoreKey String? @unique
+  role       UserRole @default(User)
+  restoreKey String?  @unique
 
   scores    Score[]
   winsCount WinCount[]
