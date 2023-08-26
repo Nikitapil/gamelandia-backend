@@ -73,9 +73,10 @@ export class QuizesController {
 
   @ApiOperation({ summary: 'Get quiz for play' })
   @ApiResponse({ status: 200, type: PlayQuizDto })
+  @UseGuards(ApplyUserGuard)
   @Get('/play/:id')
-  getPlayQuiz(@Param('id') quizId: string) {
-    return this.quizesService.getPlayQuiz(quizId);
+  getPlayQuiz(@Param('id') quizId: string, @User('id') userId?: number) {
+    return this.quizesService.getPlayQuiz(quizId, userId);
   }
 
   @ApiOperation({ summary: 'Get correct answer for question' })

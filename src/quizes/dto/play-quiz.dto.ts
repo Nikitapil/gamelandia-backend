@@ -1,7 +1,7 @@
-import { TQuizWithQuestions } from '../types';
 import { mapQuestionsToPlayQuestions } from '../helpers/quiz-mappers';
 import { ApiProperty } from '@nestjs/swagger';
 import { PlayQuestionDto } from './play-question.dto';
+import { SingleQuizReturnDto } from './single-quiz-return.dto';
 
 export class PlayQuizDto {
   @ApiProperty({ description: 'quiz id', type: String })
@@ -16,10 +16,17 @@ export class PlayQuizDto {
   @ApiProperty({ description: 'quiz questions', type: [PlayQuestionDto] })
   questions: PlayQuestionDto[];
 
-  constructor(quiz: TQuizWithQuestions) {
+  @ApiProperty({
+    description: 'is Quiz in favourites by current user',
+    type: Boolean
+  })
+  isInFavourites: boolean;
+
+  constructor(quiz: SingleQuizReturnDto) {
     this.id = quiz.id;
     this.isPrivate = quiz.isPrivate;
     this.name = quiz.name;
     this.questions = mapQuestionsToPlayQuestions(quiz.questions);
+    this.isInFavourites = quiz.isInFavourites;
   }
 }

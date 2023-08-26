@@ -185,13 +185,18 @@ export class QuizesService {
     }
   }
 
-  async getQuiz(quizId: string): Promise<SingleQuizReturnDto> {
+  async getQuiz(quizId: string, userId?: number): Promise<SingleQuizReturnDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
       },
       include: {
-        questions: true
+        questions: true,
+        favouritedBy: {
+          where: {
+            userId: userId || 0
+          }
+        }
       }
     });
 
@@ -208,11 +213,17 @@ export class QuizesService {
       }
     });
 
-    return { ...quiz, rating: rating._avg.rating };
+    const { favouritedBy, ...cleanQuiz } = quiz;
+
+    return {
+      ...cleanQuiz,
+      rating: rating._avg.rating,
+      isInFavourites: !!favouritedBy.length
+    };
   }
 
-  async getPlayQuiz(quizId: string) {
-    const quiz = await this.getQuiz(quizId);
+  async getPlayQuiz(quizId: string, userId?: number) {
+    const quiz = await this.getQuiz(quizId, userId);
     return new PlayQuizDto(quiz);
   }
 

@@ -25,4 +25,10 @@ export class SingleQuizReturnDto {
 
   @ApiProperty({ description: 'quiz questions', type: [QuizQuestionReturnDto] })
   questions: QuizQuestionReturnDto[];
+
+  @ApiProperty({
+    description: 'is Quiz in favourites by current user',
+    type: Boolean
+  })
+  isInFavourites: boolean;
 }

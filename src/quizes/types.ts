@@ -21,8 +21,6 @@ export type TAllQuizesItem = Quiz & {
   User?: { username: string };
 };
 
-export type TQuizWithQuestions = Quiz & { questions: QuizQuestion[] };
-
 export interface IPlayQuestion {
   id: string;
   question: string;
