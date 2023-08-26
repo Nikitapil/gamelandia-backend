@@ -31,6 +31,7 @@ import { SingleQuizReturnDto } from './dto/single-quiz-return.dto';
 import { CorrectAnswerReturnDto } from './dto/correct-answer-return.dto';
 import { QuizCategoriesReturnDto } from './dto/quiz-categories-return.dto';
 import { CategoryCountReturnDto } from './dto/category-count-return.dto';
+import { TUserRole } from '../types';
 
 @Injectable()
 export class QuizesService {
@@ -123,31 +124,36 @@ export class QuizesService {
 
   async getAllQuizes(
     dto: GetAllQuizesDto,
-    userId?: number
+    userId?: number,
+    userRole?: TUserRole
   ): Promise<AllQuizesReturnDto> {
-    const where: TQuizWhereInput = {
-      OR: [
-        {
-          isPrivate: false
-        },
-        {
-          userId
-        }
-      ]
-    };
+    const where: TQuizWhereInput =
+      userRole === 'Admin'
+        ? {}
+        : {
+            OR: [
+              {
+                isPrivate: false
+              },
+              {
+                userId
+              }
+            ]
+          };
     return this.getManyQuizes({ dto, userId, where });
   }
 
   async getUserQuizes(
     dto: GetAllQuizesDto,
     userId: number,
-    currentUserId?: number
+    currentUserId?: number,
+    userRole?: TUserRole
   ) {
     const where: TQuizWhereInput = {
       userId
     };
 
-    if (userId !== currentUserId) {
+    if (userId !== currentUserId && userRole !== 'Admin') {
       where.isPrivate = false;
     }
 
@@ -247,14 +253,14 @@ export class QuizesService {
     }
   }
 
-  async deleteQuiz(quizId: string, userId: number) {
+  async deleteQuiz(quizId: string, userId: number, userRole?: TUserRole) {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
       }
     });
 
-    validateQuizForUser(userId, quiz);
+    validateQuizForUser(userId, quiz, userRole);
 
     await this.prismaService.quiz.delete({
       where: {

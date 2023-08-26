@@ -28,6 +28,7 @@ import { PlayQuizDto } from './dto/play-quiz.dto';
 import { CorrectAnswerReturnDto } from './dto/correct-answer-return.dto';
 import { QuizCategoriesReturnDto } from './dto/quiz-categories-return.dto';
 import { CategoryCountReturnDto } from './dto/category-count-return.dto';
+import { TUserRole } from '../types';
 
 @ApiTags('Quizes')
 @Controller('quizes')
@@ -54,8 +55,12 @@ export class QuizesController {
   @HttpCode(200)
   @UseGuards(ApplyUserGuard)
   @Post('/all')
-  getAllQuizes(@Body() dto: GetAllQuizesDto, @User('id') userId?: number) {
-    return this.quizesService.getAllQuizes(dto, userId);
+  getAllQuizes(
+    @Body() dto: GetAllQuizesDto,
+    @User('id') userId?: number,
+    @User('role') userRole?: TUserRole
+  ) {
+    return this.quizesService.getAllQuizes(dto, userId, userRole);
   }
 
   @ApiOperation({ summary: 'Get single quiz' })
@@ -102,17 +107,27 @@ export class QuizesController {
   getQuizesByUser(
     @Body() dto: GetAllQuizesDto,
     @Param('id', ParseIntPipe) userId,
-    @User('id') currentUserId?: number
+    @User('id') currentUserId?: number,
+    @User('role') userRole?: TUserRole
   ) {
-    return this.quizesService.getUserQuizes(dto, userId, currentUserId);
+    return this.quizesService.getUserQuizes(
+      dto,
+      userId,
+      currentUserId,
+      userRole
+    );
   }
 
   @ApiOperation({ summary: 'delete quiz' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Delete('/quiz/:id')
-  deleteQuiz(@Param('id') quizId: string, @User('id') userId: number) {
-    return this.quizesService.deleteQuiz(quizId, userId);
+  deleteQuiz(
+    @Param('id') quizId: string,
+    @User('id') userId: number,
+    @User('role') userRole?: TUserRole
+  ) {
+    return this.quizesService.deleteQuiz(quizId, userId, userRole);
   }
 
   @ApiOperation({ summary: 'edit quiz' })

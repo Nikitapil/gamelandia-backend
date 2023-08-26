@@ -1,6 +1,7 @@
 import { CreateQuizQuestionDto } from '../dto/create-quiz-question.dto';
 import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { Quiz } from '@prisma/client';
+import { TUserRole } from '../../types';
 
 export const validateQuizQuestions = (questions: CreateQuizQuestionDto[]) => {
   if (questions.length < 3) {
@@ -11,12 +12,16 @@ export const validateQuizQuestions = (questions: CreateQuizQuestionDto[]) => {
   }
 };
 
-export const validateQuizForUser = (userId: number, quiz?: Quiz) => {
+export const validateQuizForUser = (
+  userId: number,
+  quiz?: Quiz,
+  role?: TUserRole
+) => {
   if (!quiz) {
     throw new NotFoundException('quiz_not_found');
   }
 
-  if (quiz.userId !== userId) {
+  if (quiz.userId !== userId && role !== 'Admin') {
     throw new BadRequestException('access_denied');
   }
 };
