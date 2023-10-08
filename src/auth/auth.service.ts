@@ -102,16 +102,29 @@ export class AuthService {
         throw new UnauthorizedException('Unauthorized');
       }
 
+      const userFromDb = await this.prisma.user.findUnique({
+        where: { id: user.id },
+        select: {
+          id: true,
+          email: true,
+          username: true,
+          role: true
+        }
+      });
+
+      if (!userFromDb) {
+        throw new UnauthorizedException('Unauthorized');
+      }
+
       const userData = await this.generateUserDataWithTokens({
-        id: user.id,
-        email: user.email,
-        username: user.username,
-        role: user.role
+        id: userFromDb.id,
+        email: userFromDb.email,
+        username: userFromDb.username,
+        role: userFromDb.role
       });
 
       return userData;
     } catch (e) {
-      console.log(e);
       throw new UnauthorizedException('Unauthorized');
     }
   }
