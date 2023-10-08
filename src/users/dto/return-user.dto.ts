@@ -9,4 +9,12 @@ export class ReturnUserDto {
 
   @ApiProperty({ example: 'Nick', description: 'user name' })
   username: string;
+
+  @ApiProperty({
+    example: 'User',
+    description: 'user role',
+    type: String,
+    enum: ['User', 'Admin']
+  })
+  role: 'User' | 'Admin';
 }

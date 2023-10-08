@@ -1,12 +1,15 @@
 import {
   BadRequestException,
   Injectable,
+  NotAcceptableException,
   NotFoundException
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { EditUserDto } from './dto/edit-user.dto';
 import * as bcrypt from 'bcryptjs';
 import { UserReturnDto } from '../auth/dto/user-return.dto';
+import { ReturnUserDto } from './dto/return-user.dto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
 
 @Injectable()
 export class UsersService {
@@ -51,5 +54,24 @@ export class UsersService {
       email: updatedUser.email,
       role: updatedUser.role
     };
+  }
+
+  async deleteUser(
+    userId: number,
+    currentUser: ReturnUserDto
+  ): Promise<SuccessMessageDto> {
+    if (userId !== currentUser.id && currentUser.role !== 'Admin') {
+      throw new NotAcceptableException('Not allowed to delete an account');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    if (!user) {
+      throw new NotFoundException('user not found');
+    }
+
+    await this.prisma.user.delete({ where: { id: userId } });
+
+    return { message: 'success' };
   }
 }
