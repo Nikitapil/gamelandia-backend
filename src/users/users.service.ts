@@ -71,6 +71,7 @@ export class UsersService {
     }
 
     await this.prisma.user.delete({ where: { id: userId } });
+    await this.prisma.token.deleteMany({ where: { userId } });
 
     return { message: 'success' };
   }

@@ -5,6 +5,7 @@ import {
   Param,
   ParseIntPipe,
   Put,
+  Res,
   UseGuards
 } from '@nestjs/common';
 import { JwtGuard } from '../guards/auth/jwt.guard';
@@ -14,6 +15,7 @@ import { User } from '../decorators/User.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ReturnUserDto } from './dto/return-user.dto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
+import { Response } from 'express';
 
 @ApiTags('Users')
 @Controller('users')
@@ -34,8 +36,10 @@ export class UsersController {
   @Delete('/delete/:id')
   deleteUser(
     @Param('id', ParseIntPipe) userId: number,
-    @User() currentUser: ReturnUserDto
+    @User() currentUser: ReturnUserDto,
+    @Res({ passthrough: true }) res: Response
   ) {
+    res.clearCookie('refreshToken', { sameSite: 'none', secure: true });
     return this.usersService.deleteUser(userId, currentUser);
   }
 }
