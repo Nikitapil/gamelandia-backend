@@ -1,7 +1,7 @@
 # Gamelandia backend
  
- Backend project for the game app
- Gamelandia frontend is here https://github.com/Nikitapil/gamelandia
+ Backend project for the game app  
+ Gamelandia frontend is here https://github.com/Nikitapil/gamelandia  
  Quizzer frontend is here https://github.com/Nikitapil/quizzer-app
  
 ## Technologies used: 
