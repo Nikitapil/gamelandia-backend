@@ -61,6 +61,12 @@ export const seedGames = async (prisma: PrismaClient) => {
       scores: {
         create: createInitialScores(1)
       }
+    },
+    {
+      name: 'brick',
+      scores: {
+        create: createInitialScores(10)
+      }
     }
   ];
   await Promise.all(
