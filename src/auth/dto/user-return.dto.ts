@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserRolesEnum } from '../../domain/common';
 
 export class UserReturnDto {
   @ApiProperty({ example: 1, description: 'User Id', type: Number })
@@ -22,7 +23,8 @@ export class UserReturnDto {
     example: 'User',
     description: 'user role',
     type: String,
-    enum: ['User', 'Admin']
+    enum: UserRolesEnum,
+    enumName: 'UserRolesEnum'
   })
-  role: string;
+  role: 'User' | 'Admin';
 }

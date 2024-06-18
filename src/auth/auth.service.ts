@@ -19,6 +19,7 @@ import { v4 } from 'uuid';
 import { getRestorePasswordTemplate } from './helpers/mail-templates';
 import { RestorePasswordDto } from './dto/restore-password.dto';
 import { UserReturnDto } from './dto/user-return.dto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
 
 @Injectable()
 export class AuthService {
@@ -136,7 +137,7 @@ export class AuthService {
           token: refreshToken
         }
       });
-      return { message: 'success' };
+      return new SuccessMessageDto();
     } catch (e) {
       throw new UnauthorizedException('Unauthorized');
     }
@@ -219,7 +220,7 @@ export class AuthService {
       html: getRestorePasswordTemplate(restoreKey, clientUrl)
     });
 
-    return { message: 'send' };
+    return new SuccessMessageDto();
   }
 
   async restorePassword(dto: RestorePasswordDto) {

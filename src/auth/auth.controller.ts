@@ -16,10 +16,9 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { Cookies } from '../decorators/Cookies.decorator';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthResponseDto } from './dto/auth-response.dto';
-import { LogoutResponseDto } from './dto/logout-response.dto';
 import { GetRestoreKeyDto } from './dto/get-restore-key.dto';
 import { RestorePasswordDto } from './dto/restore-password.dto';
-import { ReturnRestoreKetDto } from './dto/return-restore-ket.dto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
 
 @ApiTags('Authorization')
 @Controller('auth')
@@ -32,7 +31,7 @@ export class AuthController {
   async signup(
     @Body() dto: CreateUserDto,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<AuthResponseDto> {
     const { user, refreshToken, accessToken } = await this.authService.signup(
       dto
     );
@@ -54,7 +53,7 @@ export class AuthController {
   async signin(
     @Body() dto: LoginUserDto,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<AuthResponseDto> {
     const { user, refreshToken, accessToken } = await this.authService.signin(
       dto
     );
@@ -75,7 +74,7 @@ export class AuthController {
   async refresh(
     @Cookies('refreshToken') token: string,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<AuthResponseDto> {
     const { user, refreshToken, accessToken } = await this.authService.refresh(
       token
     );
@@ -91,20 +90,22 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Logout' })
-  @ApiResponse({ status: 200, type: LogoutResponseDto })
+  @ApiResponse({ status: 200, type: SuccessMessageDto })
   @Get('/logout')
   logout(
     @Cookies('refreshToken') token: string,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<SuccessMessageDto> {
     res.clearCookie('refreshToken', { sameSite: 'none', secure: true });
     return this.authService.logout(token);
   }
 
   @ApiOperation({ summary: 'Get restore password key to email' })
-  @ApiResponse({ status: 201, type: ReturnRestoreKetDto })
+  @ApiResponse({ status: 201, type: SuccessMessageDto })
   @Post('/get_restore_password_key')
-  getRestorePasswordKey(@Body() dto: GetRestoreKeyDto) {
+  getRestorePasswordKey(
+    @Body() dto: GetRestoreKeyDto
+  ): Promise<SuccessMessageDto> {
     return this.authService.getRestorePasswordKey(dto.email);
   }
 
@@ -114,7 +115,7 @@ export class AuthController {
   async restorePassword(
     @Body() dto: RestorePasswordDto,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<AuthResponseDto> {
     const { user, refreshToken, accessToken } =
       await this.authService.restorePassword(dto);
 
