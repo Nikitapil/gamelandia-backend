@@ -1,30 +1,43 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { ScoreUserDto } from './score-user-dto';
 
 export class ScoreReturnDto {
-  @ApiProperty({ example: '1', description: 'score id' })
+  @ApiProperty({ example: '1', description: 'score id', type: Number })
   id: number;
 
   @ApiProperty({
     example: '12023-04-25T12:34:32.191Z',
-    description: 'created date property'
+    description: 'created date property',
+    type: String
   })
-  createdAt: string;
+  createdAt: Date;
 
-  @ApiProperty({ example: '1', description: 'score value' })
+  @ApiProperty({ example: '1', description: 'score value', type: Number })
   value: number;
 
-  @ApiProperty({ example: 'easy', description: 'game level' })
+  @ApiPropertyOptional({
+    example: 'easy',
+    description: 'game level',
+    type: String,
+    nullable: true
+  })
   level?: string | null;
 
-  @ApiProperty({ example: 'tetris', description: 'game name' })
+  @ApiProperty({ example: 'tetris', description: 'game name', type: String })
   gameName: string;
 
-  @ApiProperty({ example: '1', description: 'userId of score owner' })
+  @ApiProperty({
+    example: '1',
+    description: 'userId of score owner',
+    type: Number
+  })
   userId: number;
 
   @ApiProperty({
     example: { username: 'Nick' },
-    description: 'username of score owner'
+    description: 'username of score owner',
+    type: ScoreUserDto,
+    nullable: true
   })
-  User: { username: string } | null;
+  User: ScoreUserDto | null;
 }
