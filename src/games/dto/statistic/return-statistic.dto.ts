@@ -10,7 +10,7 @@ export class ReturnStatisticDto {
     description: 'User game best score',
     type: ScoreReturnDto
   })
-  scores: ScoreReturnDto;
+  score: ScoreReturnDto;
 
   @ApiProperty({
     description: 'User win count for game',

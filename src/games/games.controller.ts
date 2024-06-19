@@ -3,16 +3,12 @@ import { GamesService } from './games.service';
 import { JwtGuard } from '../guards/auth/jwt.guard';
 import { User } from '../decorators/User.decorator';
 import { CreateScoreDto } from './dto/score/create-score.dto';
-import {
-  ApiOperation,
-  ApiResponse,
-  ApiTags,
-  getSchemaPath
-} from '@nestjs/swagger';
-import { ScoreReturnDto } from './dto/score/score-return.dto';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { UpdateWinsCountDto } from './dto/win-count/update-wins-count.dto';
 import { LevelsGuard } from './guards/levels.guard';
 import { ReturnStatisticDto } from './dto/statistic/return-statistic.dto';
+import { AddScoreReturnDto } from './dto/AddScoreReturnDto';
+import { WinCountReturnDto } from './dto/win-count/win-count-return.dto';
 
 @ApiTags('Games')
 @Controller('games')
@@ -20,49 +16,42 @@ export class GamesController {
   constructor(private gamesService: GamesService) {}
 
   @ApiOperation({ summary: 'add score' })
-  @ApiResponse({ status: 201, type: [ScoreReturnDto] })
+  @ApiResponse({ status: 201, type: AddScoreReturnDto })
   @UseGuards(JwtGuard)
   @UseGuards(LevelsGuard)
   @Post('/score')
-  addScore(@Body() dto: CreateScoreDto, @User('id') userId: number) {
+  addScore(
+    @Body() dto: CreateScoreDto,
+    @User('id') userId: number
+  ): Promise<AddScoreReturnDto> {
     return this.gamesService.addScore(dto, userId);
   }
 
   @ApiOperation({ summary: 'get score' })
-  @ApiResponse({
-    status: 200,
-    schema: {
-      properties: {
-        scores: {
-          type: 'array',
-          items: {
-            allOf: [{ $ref: getSchemaPath(ScoreReturnDto) }]
-          }
-        },
-        withLevels: {
-          type: 'boolean'
-        }
-      }
-    }
-  })
+  @ApiResponse({ status: 200, type: AddScoreReturnDto })
   @Get('/score/:name')
-  getScoresByGameName(@Param('name') name: string) {
+  getScoresByGameName(@Param('name') name: string): Promise<AddScoreReturnDto> {
     return this.gamesService.getScoresByGameName(name);
   }
 
   @ApiOperation({ summary: 'add winCount' })
-  @ApiResponse({ status: 201, type: [ScoreReturnDto] })
+  @ApiResponse({ status: 201, type: [WinCountReturnDto] })
   @UseGuards(JwtGuard)
   @UseGuards(LevelsGuard)
   @Post('/win')
-  updateWinsCount(@Body() dto: UpdateWinsCountDto, @User('id') userId: number) {
+  updateWinsCount(
+    @Body() dto: UpdateWinsCountDto,
+    @User('id') userId: number
+  ): Promise<WinCountReturnDto[]> {
     return this.gamesService.updateWinsCount(dto, userId);
   }
 
   @ApiOperation({ summary: 'get winCount by game name' })
-  @ApiResponse({ status: 200, type: [ScoreReturnDto] })
+  @ApiResponse({ status: 200, type: [WinCountReturnDto] })
   @Get('/win/:name')
-  getWinnersByGameName(@Param('name') name: string) {
+  getWinnersByGameName(
+    @Param('name') name: string
+  ): Promise<WinCountReturnDto[]> {
     return this.gamesService.getWinnersByGameName(name);
   }
 
@@ -70,7 +59,7 @@ export class GamesController {
   @ApiResponse({ status: 200, type: [ReturnStatisticDto] })
   @UseGuards(JwtGuard)
   @Get('/my_statistics')
-  getMyStatistics(@User('id') userId: number) {
+  getMyStatistics(@User('id') userId: number): Promise<ReturnStatisticDto[]> {
     return this.gamesService.getMyStatistic(userId);
   }
 }

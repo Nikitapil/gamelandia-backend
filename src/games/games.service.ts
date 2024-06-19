@@ -3,6 +3,7 @@ import { CreateScoreDto } from './dto/score/create-score.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { UpdateWinsCountDto } from './dto/win-count/update-wins-count.dto';
 import { GAMES_LEVELS } from './constants';
+import { ScoreReturnDto } from './dto/score/score-return.dto';
 
 @Injectable()
 export class GamesService {
@@ -22,7 +23,7 @@ export class GamesService {
   async getScoresByGameName(gameName: string) {
     const gameLevels = GAMES_LEVELS[gameName];
     if (gameLevels) {
-      const scores = await Promise.all(
+      const scores: ScoreReturnDto[] = await Promise.all(
         gameLevels.map((level) =>
           this.getScoresByGameNameAndLevel(gameName, level)
         )
@@ -122,6 +123,13 @@ export class GamesService {
           where: {
             userId
           },
+          include: {
+            User: {
+              select: {
+                username: true
+              }
+            }
+          },
           orderBy: {
             value: 'desc'
           },
@@ -130,6 +138,13 @@ export class GamesService {
         winsCount: {
           where: {
             userId
+          },
+          include: {
+            User: {
+              select: {
+                username: true
+              }
+            }
           }
         }
       }

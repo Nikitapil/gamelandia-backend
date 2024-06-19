@@ -43,7 +43,8 @@ export class WinCountReturnDto {
   @ApiProperty({
     example: { username: 'Nick' },
     description: 'username of score owner',
-    type: GameUserDto
+    type: GameUserDto,
+    nullable: true
   })
   User: GameUserDto | null;
 }
