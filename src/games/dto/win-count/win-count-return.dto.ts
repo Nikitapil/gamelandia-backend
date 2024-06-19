@@ -1,30 +1,49 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import { GameUserDto } from '../GameUserDto';
 
-export class ScoreReturnDto {
-  @ApiProperty({ example: '1', description: 'score id' })
+export class WinCountReturnDto {
+  @ApiProperty({ example: '1', description: 'winCount id', type: Number })
   id: number;
 
   @ApiProperty({
     example: '12023-04-25T12:34:32.191Z',
-    description: 'created date property'
+    description: 'created date property',
+    type: String
   })
-  createdAt: string;
+  createdAt: Date;
 
-  @ApiProperty({ example: '1', description: 'winCount value' })
+  @ApiProperty({
+    example: '12023-04-25T12:34:32.191Z',
+    description: 'created date property',
+    type: String
+  })
+  updatedAt: Date;
+
+  @ApiProperty({ example: '1', description: 'winCount value', type: Number })
   value: number;
 
-  @ApiProperty({ example: 'easy', description: 'game level' })
+  @ApiPropertyOptional({
+    example: 'easy',
+    description: 'game level',
+    type: String,
+    nullable: true
+  })
   level?: string | null;
 
-  @ApiProperty({ example: 'tetris', description: 'game name' })
+  @ApiProperty({ example: 'tetris', description: 'game name', type: String })
   gameName: string;
 
-  @ApiProperty({ example: '1', description: 'userId of winCount owner' })
+  @ApiProperty({
+    example: '1',
+    description: 'userId of winCount owner',
+    type: String
+  })
   userId: number;
 
   @ApiProperty({
     example: { username: 'Nick' },
-    description: 'username of score owner'
+    description: 'username of score owner',
+    type: GameUserDto
   })
-  User: { username: string } | null;
+  User: GameUserDto | null;
 }

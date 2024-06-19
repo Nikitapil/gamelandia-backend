@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ScoreUserDto {
+export class GameUserDto {
   @ApiProperty({ description: 'score user username', type: String })
   username: string;
 }

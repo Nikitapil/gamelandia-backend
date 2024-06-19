@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { ScoreUserDto } from './score-user-dto';
+import { GameUserDto } from '../GameUserDto';
 
 export class ScoreReturnDto {
   @ApiProperty({ example: '1', description: 'score id', type: Number })
@@ -11,6 +11,13 @@ export class ScoreReturnDto {
     type: String
   })
   createdAt: Date;
+
+  @ApiProperty({
+    example: '12023-04-25T12:34:32.191Z',
+    description: 'created date property',
+    type: String
+  })
+  updatedAt: Date;
 
   @ApiProperty({ example: '1', description: 'score value', type: Number })
   value: number;
@@ -36,8 +43,8 @@ export class ScoreReturnDto {
   @ApiProperty({
     example: { username: 'Nick' },
     description: 'username of score owner',
-    type: ScoreUserDto,
+    type: GameUserDto,
     nullable: true
   })
-  User: ScoreUserDto | null;
+  User: GameUserDto | null;
 }
