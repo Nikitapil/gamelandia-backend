@@ -278,7 +278,7 @@ export class QuizesService {
         id: quizId
       }
     });
-    return { message: 'success' };
+    return new SuccessMessageDto();
   }
 
   async editQuiz(dto: EditQuizDto, userId: number): Promise<SuccessMessageDto> {

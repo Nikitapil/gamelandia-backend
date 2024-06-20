@@ -38,7 +38,7 @@ export class QuizesController {
   @ApiOperation({ summary: 'generate quiz from opentdb' })
   @ApiResponse({ status: 201, type: ReturnGeneratedQuizDto })
   @Post('/generate')
-  generateQuiz(@Body() dto: GenerateQuizDto) {
+  generateQuiz(@Body() dto: GenerateQuizDto): Promise<ReturnGeneratedQuizDto> {
     return this.quizesService.generateQuiz(dto);
   }
 
@@ -46,7 +46,10 @@ export class QuizesController {
   @ApiResponse({ status: 201, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/create')
-  createQuiz(@Body() dto: CreateQuizDto, @User('id') userId: number) {
+  createQuiz(
+    @Body() dto: CreateQuizDto,
+    @User('id') userId: number
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.createQuiz(dto, userId);
   }
 
@@ -59,7 +62,7 @@ export class QuizesController {
     @Body() dto: GetAllQuizesDto,
     @User('id') userId?: number,
     @User('role') userRole?: TUserRole
-  ) {
+  ): Promise<AllQuizesReturnDto> {
     return this.quizesService.getAllQuizes(dto, userId, userRole);
   }
 
@@ -67,7 +70,7 @@ export class QuizesController {
   @ApiResponse({ status: 200, type: SingleQuizReturnDto })
   @UseGuards(JwtGuard)
   @Get('/quiz/:id')
-  getQuiz(@Param('id') quizId: string) {
+  getQuiz(@Param('id') quizId: string): Promise<SingleQuizReturnDto> {
     return this.quizesService.getQuiz(quizId);
   }
 
@@ -75,28 +78,35 @@ export class QuizesController {
   @ApiResponse({ status: 200, type: PlayQuizDto })
   @UseGuards(ApplyUserGuard)
   @Get('/play/:id')
-  getPlayQuiz(@Param('id') quizId: string, @User('id') userId?: number) {
+  getPlayQuiz(
+    @Param('id') quizId: string,
+    @User('id') userId?: number
+  ): Promise<PlayQuizDto> {
     return this.quizesService.getPlayQuiz(quizId, userId);
   }
 
   @ApiOperation({ summary: 'Get correct answer for question' })
   @ApiResponse({ status: 200, type: CorrectAnswerReturnDto })
   @Get('/question/:id')
-  getCorrectAnswer(@Param('id') questionId: string) {
+  getCorrectAnswer(
+    @Param('id') questionId: string
+  ): Promise<CorrectAnswerReturnDto> {
     return this.quizesService.getCorrectAnswer(questionId);
   }
 
   @ApiOperation({ summary: 'Get available quiz categories' })
   @ApiResponse({ status: 200, type: [QuizCategoriesReturnDto] })
   @Get('/categories')
-  getCategories() {
+  getCategories(): Promise<QuizCategoriesReturnDto[]> {
     return this.quizesService.getCategories();
   }
 
   @ApiOperation({ summary: 'Get category questions count' })
   @ApiResponse({ status: 200, type: CategoryCountReturnDto })
   @Get('/categories/count/:id')
-  getCategoriesQuestionCount(@Param('id') categoryId: string) {
+  getCategoriesQuestionCount(
+    @Param('id') categoryId: string
+  ): Promise<CategoryCountReturnDto> {
     return this.quizesService.getCategoryQuestionsCount(categoryId);
   }
 
@@ -107,10 +117,10 @@ export class QuizesController {
   @Post('/user/:id')
   getQuizesByUser(
     @Body() dto: GetAllQuizesDto,
-    @Param('id', ParseIntPipe) userId,
+    @Param('id', ParseIntPipe) userId: number,
     @User('id') currentUserId?: number,
     @User('role') userRole?: TUserRole
-  ) {
+  ): Promise<AllQuizesReturnDto> {
     return this.quizesService.getUserQuizes(
       dto,
       userId,
@@ -127,7 +137,7 @@ export class QuizesController {
     @Param('id') quizId: string,
     @User('id') userId: number,
     @User('role') userRole?: TUserRole
-  ) {
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.deleteQuiz(quizId, userId, userRole);
   }
 
@@ -135,7 +145,10 @@ export class QuizesController {
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Put('/edit')
-  editQuiz(@Body() dto: EditQuizDto, @User('id') userId: number) {
+  editQuiz(
+    @Body() dto: EditQuizDto,
+    @User('id') userId: number
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.editQuiz(dto, userId);
   }
 
@@ -143,7 +156,10 @@ export class QuizesController {
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/rate')
-  rateQuiz(@Body() dto: RateQuizDto, @User('id') userId: number) {
+  rateQuiz(
+    @Body() dto: RateQuizDto,
+    @User('id') userId: number
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.rateQuiz(dto, userId);
   }
 
@@ -154,7 +170,7 @@ export class QuizesController {
   getFavouritesQuizes(
     @Body() dto: GetAllQuizesDto,
     @User('id') userId: number
-  ) {
+  ): Promise<AllQuizesReturnDto> {
     return this.quizesService.getFavouritesQuizes(dto, userId);
   }
 
@@ -162,7 +178,10 @@ export class QuizesController {
   @ApiResponse({ status: 201, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/favourite/:id')
-  addQuizToFavourites(@Param('id') quizId: string, @User('id') userId: number) {
+  addQuizToFavourites(
+    @Param('id') quizId: string,
+    @User('id') userId: number
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.addQuizToFavourites(quizId, userId);
   }
 
@@ -173,7 +192,7 @@ export class QuizesController {
   removeQuizFromFavourites(
     @Param('id') quizId: string,
     @User('id') userId: number
-  ) {
+  ): Promise<SuccessMessageDto> {
     return this.quizesService.removeQuizFromFavourites(quizId, userId);
   }
 }
