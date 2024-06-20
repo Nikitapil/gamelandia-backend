@@ -10,6 +10,7 @@ import * as bcrypt from 'bcryptjs';
 import { UserReturnDto } from '../auth/dto/user-return.dto';
 import { ReturnUserDto } from './dto/return-user.dto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
+import { UserRolesEnum } from "../domain/common";
 
 @Injectable()
 export class UsersService {
@@ -52,7 +53,7 @@ export class UsersService {
       id: updatedUser.id,
       username: updatedUser.username,
       email: updatedUser.email,
-      role: updatedUser.role
+      role: updatedUser.role as UserRolesEnum
     };
   }
 

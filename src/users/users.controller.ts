@@ -16,6 +16,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ReturnUserDto } from './dto/return-user.dto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
 import { Response } from 'express';
+import { UserReturnDto } from '../auth/dto/user-return.dto';
 
 @ApiTags('Users')
 @Controller('users')
@@ -23,10 +24,13 @@ export class UsersController {
   constructor(private usersService: UsersService) {}
 
   @ApiOperation({ summary: 'Edit user' })
-  @ApiResponse({ status: 200, type: ReturnUserDto })
+  @ApiResponse({ status: 200, type: UserReturnDto })
   @UseGuards(JwtGuard)
   @Put('/edit')
-  editUser(@Body() dto: EditUserDto, @User('id') userId: number) {
+  editUser(
+    @Body() dto: EditUserDto,
+    @User('id') userId: number
+  ): Promise<UserReturnDto> {
     return this.usersService.editUser(dto, userId);
   }
 
@@ -38,7 +42,7 @@ export class UsersController {
     @Param('id', ParseIntPipe) userId: number,
     @User() currentUser: ReturnUserDto,
     @Res({ passthrough: true }) res: Response
-  ) {
+  ): Promise<SuccessMessageDto> {
     res.clearCookie('refreshToken', { sameSite: 'none', secure: true });
     return this.usersService.deleteUser(userId, currentUser);
   }
