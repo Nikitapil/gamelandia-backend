@@ -12,7 +12,7 @@ export class GetAllQuizesDto {
   @IsOptional()
   limit: number;
 
-  @ApiProperty({ description: 'search string', type: Number })
+  @ApiProperty({ description: 'search string', type: String })
   @IsString({ message: 'search must be a string value' })
   @IsOptional()
   search: string;

@@ -1,27 +1,14 @@
 import { TAllQuizesItem, TRatingResponseFromDb } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class ManyQuizesDto {
-  constructor(quiz: TAllQuizesItem, ratings: TRatingResponseFromDb) {
-    this.id = quiz.id;
-    this.createdAt = quiz.createdAt;
-    this.updatedAt = quiz.updatedAt;
-    this.name = quiz.name;
-    this.isPrivate = quiz.isPrivate;
-    this.userId = quiz.userId;
-    this.isInFavourites = !!quiz.favouritedBy.length;
-    this.questionsCount = quiz._count.questions;
-    this.author = quiz.User?.username || null;
-    this.getRating(ratings);
-  }
-
+export class QuizDto {
   @ApiProperty({ description: 'quiz id', type: String })
   id: string;
 
-  @ApiProperty({ description: 'created date', type: Date })
+  @ApiProperty({ description: 'created date', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'updated date', type: Date })
+  @ApiProperty({ description: 'updated date', type: String })
   updatedAt: Date;
 
   @ApiProperty({ description: 'quiz name', type: String })
@@ -44,6 +31,19 @@ export class ManyQuizesDto {
 
   @ApiProperty({ description: 'quiz rating', type: Number, nullable: true })
   rating: number | null;
+
+  constructor(quiz: TAllQuizesItem, ratings: TRatingResponseFromDb) {
+    this.id = quiz.id;
+    this.createdAt = quiz.createdAt;
+    this.updatedAt = quiz.updatedAt;
+    this.name = quiz.name;
+    this.isPrivate = quiz.isPrivate;
+    this.userId = quiz.userId;
+    this.isInFavourites = !!quiz.favouritedBy.length;
+    this.questionsCount = quiz._count.questions;
+    this.author = quiz.User?.username || null;
+    this.getRating(ratings);
+  }
 
   private getRating(ratings: TRatingResponseFromDb) {
     const rating = ratings.find((rate) => rate.quizId === this.id);

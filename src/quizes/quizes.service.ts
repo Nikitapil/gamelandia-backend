@@ -16,7 +16,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
 import { AllQuizesReturnDto } from './dto/all-quizes-return.dto';
-import { ManyQuizesDto } from './dto/many-quizes.dto';
+import { QuizDto } from './dto/quiz.dto';
 import { CreateQuizDto } from './dto/create-quiz.dto';
 import {
   validateQuizForUser,
@@ -92,7 +92,7 @@ export class QuizesService {
     });
 
     return {
-      quizes: quizes.map((quiz) => new ManyQuizesDto(quiz, ratings)),
+      quizes: quizes.map((quiz) => new QuizDto(quiz, ratings)),
       totalCount
     };
   }

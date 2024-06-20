@@ -1,31 +1,41 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
+import { IsEnum, IsNumber, IsOptional, IsString } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  EQuizDifficulties,
+  EQuizQuestionType,
+  QuizDifficulties,
+  QuizQuestionTypes
+} from '../types';
 
 export class GenerateQuizDto {
   @ApiProperty({ description: 'amount of questions', type: Number })
   @IsNumber({}, { message: 'amount must be a number value' })
   amount: number;
 
-  @ApiProperty({ description: 'category of questions', type: Number })
+  @ApiPropertyOptional({ description: 'category of questions', type: Number })
   @IsNumber({}, { message: 'amount must be a number value' })
   @IsOptional()
   category?: number;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'difficulty of questions',
     type: String,
-    enum: ['easy', 'medium', 'hard']
+    enum: EQuizDifficulties,
+    enumName: 'QuizDifficultiesEnum'
   })
   @IsString({ message: 'difficulty must be string' })
   @IsOptional()
-  difficulty?: 'easy' | 'medium' | 'hard';
+  @IsEnum(QuizDifficulties)
+  difficulty?: EQuizDifficulties;
 
-  @ApiProperty({
+  @ApiPropertyOptional({
     description: 'type of questions',
     type: String,
-    enum: ['multiple', 'boolean']
+    enum: EQuizQuestionType,
+    enumName: 'QuizQuestionTypeEnum'
   })
   @IsString({ message: 'difficulty must be string' })
   @IsOptional()
-  type?: 'multiple' | 'boolean';
+  @IsEnum(QuizQuestionTypes)
+  type?: EQuizQuestionType;
 }

@@ -7,8 +7,8 @@ export class CreateQuizDto {
   @IsString({ message: 'Quiz name should be string' })
   name: string;
 
-  @ApiProperty({ description: 'Quiz privacy', type: String })
-  @IsBoolean({ message: 'isPrivate field should be true or false' })
+  @ApiProperty({ description: 'Quiz privacy', type: Boolean })
+  @IsBoolean({ message: 'isPrivate field should be boolean' })
   isPrivate: boolean;
 
   @ApiProperty({ description: 'Quiz questions', type: [CreateQuizQuestionDto] })

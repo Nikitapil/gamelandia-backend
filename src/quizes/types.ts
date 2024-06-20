@@ -1,9 +1,4 @@
-import {
-  FavoritesQuizesOnUser,
-  Quiz,
-  QuizQuestion,
-  Prisma
-} from '@prisma/client';
+import { FavoritesQuizesOnUser, Quiz, Prisma } from '@prisma/client';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
 
 export interface IGeneratedQuestion {
@@ -58,3 +53,25 @@ export interface CategoryQuestionCount {
   total_medium_question_count: number;
   total_hard_question_count: number;
 }
+
+export enum EQuizDifficulties {
+  EASY = 'easy',
+  MEDIUM = 'medium',
+  HARD = 'hard'
+}
+
+export const QuizDifficulties = [
+  EQuizDifficulties.EASY,
+  EQuizDifficulties.MEDIUM,
+  EQuizDifficulties.HARD
+] as const;
+
+export enum EQuizQuestionType {
+  MULTIPLE = 'multiple',
+  BOOL = 'boolean'
+}
+
+export const QuizQuestionTypes = [
+  EQuizQuestionType.MULTIPLE,
+  EQuizQuestionType.BOOL
+] as const;

@@ -4,10 +4,10 @@ export class QuizQuestionReturnDto {
   @ApiProperty({ description: 'question id', type: String })
   id: string;
 
-  @ApiProperty({ description: 'question created at', type: Date })
+  @ApiProperty({ description: 'question created at', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'question updated at', type: Date })
+  @ApiProperty({ description: 'question updated at', type: String })
   updatedAt: Date;
 
   @ApiProperty({ description: 'question', type: String })

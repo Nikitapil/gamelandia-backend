@@ -1,17 +1,17 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QuizQuestionReturnDto } from './quiz-question-return.dto';
 
 export class SingleQuizReturnDto {
-  @ApiProperty({ description: 'quiz rating', type: Number })
+  @ApiPropertyOptional({ description: 'quiz rating', type: Number })
   rating?: number;
 
   @ApiProperty({ description: 'quiz id', type: String })
   id: string;
 
-  @ApiProperty({ description: 'quiz created date', type: Date })
+  @ApiProperty({ description: 'quiz created date', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'quiz updated date', type: Date })
+  @ApiProperty({ description: 'quiz updated date', type: String })
   updatedAt: Date;
 
   @ApiProperty({ description: 'quiz name', type: String })
