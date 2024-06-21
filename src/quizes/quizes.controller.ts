@@ -35,14 +35,20 @@ import { TUserRole } from '../types';
 export class QuizesController {
   constructor(private quizesService: QuizesService) {}
 
-  @ApiOperation({ summary: 'generate quiz from opentdb' })
+  @ApiOperation({
+    summary: 'generate quiz from opentdb',
+    operationId: 'generateQuiz'
+  })
   @ApiResponse({ status: 201, type: ReturnGeneratedQuizDto })
   @Post('/generate')
   generateQuiz(@Body() dto: GenerateQuizDto): Promise<ReturnGeneratedQuizDto> {
     return this.quizesService.generateQuiz(dto);
   }
 
-  @ApiOperation({ summary: 'create new quiz by user' })
+  @ApiOperation({
+    summary: 'create new quiz by user',
+    operationId: 'createQuiz'
+  })
   @ApiResponse({ status: 201, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/create')
@@ -53,7 +59,10 @@ export class QuizesController {
     return this.quizesService.createQuiz(dto, userId);
   }
 
-  @ApiOperation({ summary: 'Get all available quizes' })
+  @ApiOperation({
+    summary: 'Get all available quizes',
+    operationId: 'getAllQuizes'
+  })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
   @HttpCode(200)
   @UseGuards(ApplyUserGuard)
@@ -66,7 +75,7 @@ export class QuizesController {
     return this.quizesService.getAllQuizes(dto, userId, userRole);
   }
 
-  @ApiOperation({ summary: 'Get single quiz' })
+  @ApiOperation({ summary: 'Get single quiz', operationId: 'getQuiz' })
   @ApiResponse({ status: 200, type: SingleQuizReturnDto })
   @UseGuards(JwtGuard)
   @Get('/quiz/:id')
@@ -74,7 +83,7 @@ export class QuizesController {
     return this.quizesService.getQuiz(quizId);
   }
 
-  @ApiOperation({ summary: 'Get quiz for play' })
+  @ApiOperation({ summary: 'Get quiz for play', operationId: 'getPlayQuiz' })
   @ApiResponse({ status: 200, type: PlayQuizDto })
   @UseGuards(ApplyUserGuard)
   @Get('/play/:id')
@@ -85,7 +94,10 @@ export class QuizesController {
     return this.quizesService.getPlayQuiz(quizId, userId);
   }
 
-  @ApiOperation({ summary: 'Get correct answer for question' })
+  @ApiOperation({
+    summary: 'Get correct answer for question',
+    operationId: 'getCorrectAnswer'
+  })
   @ApiResponse({ status: 200, type: CorrectAnswerReturnDto })
   @Get('/question/:id')
   getCorrectAnswer(
@@ -94,14 +106,20 @@ export class QuizesController {
     return this.quizesService.getCorrectAnswer(questionId);
   }
 
-  @ApiOperation({ summary: 'Get available quiz categories' })
+  @ApiOperation({
+    summary: 'Get available quiz categories',
+    operationId: 'getCategories'
+  })
   @ApiResponse({ status: 200, type: [QuizCategoriesReturnDto] })
   @Get('/categories')
   getCategories(): Promise<QuizCategoriesReturnDto[]> {
     return this.quizesService.getCategories();
   }
 
-  @ApiOperation({ summary: 'Get category questions count' })
+  @ApiOperation({
+    summary: 'Get category questions count',
+    operationId: 'getCategoriesQuestionCount'
+  })
   @ApiResponse({ status: 200, type: CategoryCountReturnDto })
   @Get('/categories/count/:id')
   getCategoriesQuestionCount(
@@ -110,7 +128,7 @@ export class QuizesController {
     return this.quizesService.getCategoryQuestionsCount(categoryId);
   }
 
-  @ApiOperation({ summary: 'Get user quizes' })
+  @ApiOperation({ summary: 'Get user quizes', operationId: 'getQuizesByUser' })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
   @HttpCode(200)
   @UseGuards(ApplyUserGuard)
@@ -129,7 +147,7 @@ export class QuizesController {
     );
   }
 
-  @ApiOperation({ summary: 'delete quiz' })
+  @ApiOperation({ summary: 'delete quiz', operationId: 'deleteQuiz' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Delete('/quiz/:id')
@@ -141,7 +159,7 @@ export class QuizesController {
     return this.quizesService.deleteQuiz(quizId, userId, userRole);
   }
 
-  @ApiOperation({ summary: 'edit quiz' })
+  @ApiOperation({ summary: 'edit quiz', operationId: 'editQuiz' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Put('/edit')
@@ -152,7 +170,7 @@ export class QuizesController {
     return this.quizesService.editQuiz(dto, userId);
   }
 
-  @ApiOperation({ summary: 'rate quiz' })
+  @ApiOperation({ summary: 'rate quiz', operationId: 'rateQuiz' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/rate')
@@ -163,7 +181,10 @@ export class QuizesController {
     return this.quizesService.rateQuiz(dto, userId);
   }
 
-  @ApiOperation({ summary: 'Get all quizes from favourites' })
+  @ApiOperation({
+    summary: 'Get all quizes from favourites',
+    operationId: 'getFavouritesQuizes'
+  })
   @ApiResponse({ status: 200, type: AllQuizesReturnDto })
   @UseGuards(JwtGuard)
   @Post('/favourite')
@@ -174,7 +195,10 @@ export class QuizesController {
     return this.quizesService.getFavouritesQuizes(dto, userId);
   }
 
-  @ApiOperation({ summary: 'Add quiz to favourites' })
+  @ApiOperation({
+    summary: 'Add quiz to favourites',
+    operationId: 'addQuizToFavourites'
+  })
   @ApiResponse({ status: 201, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Post('/favourite/:id')
@@ -185,7 +209,10 @@ export class QuizesController {
     return this.quizesService.addQuizToFavourites(quizId, userId);
   }
 
-  @ApiOperation({ summary: 'Remove quiz from favourites' })
+  @ApiOperation({
+    summary: 'Remove quiz from favourites',
+    operationId: 'removeQuizFromFavourites'
+  })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Delete('/favourite/:id')

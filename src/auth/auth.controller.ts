@@ -25,7 +25,7 @@ import { SuccessMessageDto } from '../dto/success-message.dto';
 export class AuthController {
   constructor(private authService: AuthService) {}
 
-  @ApiOperation({ summary: 'Sign up' })
+  @ApiOperation({ summary: 'Sign up', operationId: 'signup' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   @Post('/signup')
   async signup(
@@ -46,7 +46,7 @@ export class AuthController {
     return { user, accessToken };
   }
 
-  @ApiOperation({ summary: 'Sign in' })
+  @ApiOperation({ summary: 'Sign in', operationId: 'signin' })
   @ApiResponse({ status: 201, type: AuthResponseDto })
   @HttpCode(HttpStatus.OK)
   @Post('/signin')
@@ -68,7 +68,7 @@ export class AuthController {
     return { user, accessToken };
   }
 
-  @ApiOperation({ summary: 'Refresh tokens' })
+  @ApiOperation({ summary: 'Refresh tokens', operationId: 'refresh' })
   @ApiResponse({ status: 200, type: AuthResponseDto })
   @Get('/refresh')
   async refresh(
@@ -89,7 +89,7 @@ export class AuthController {
     return { user, accessToken };
   }
 
-  @ApiOperation({ summary: 'Logout' })
+  @ApiOperation({ summary: 'Logout', operationId: 'logout' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @Get('/logout')
   logout(
@@ -100,7 +100,10 @@ export class AuthController {
     return this.authService.logout(token);
   }
 
-  @ApiOperation({ summary: 'Get restore password key to email' })
+  @ApiOperation({
+    summary: 'Get restore password key to email',
+    operationId: 'getRestorePasswordKey'
+  })
   @ApiResponse({ status: 201, type: SuccessMessageDto })
   @Post('/get_restore_password_key')
   getRestorePasswordKey(
@@ -109,7 +112,7 @@ export class AuthController {
     return this.authService.getRestorePasswordKey(dto.email);
   }
 
-  @ApiOperation({ summary: 'Restore password' })
+  @ApiOperation({ summary: 'Restore password', operationId: 'restorePassword' })
   @ApiResponse({ status: 200, type: AuthResponseDto })
   @Put('/restore_password')
   async restorePassword(

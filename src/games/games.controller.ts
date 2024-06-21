@@ -15,7 +15,7 @@ import { WinCountReturnDto } from './dto/win-count/win-count-return.dto';
 export class GamesController {
   constructor(private gamesService: GamesService) {}
 
-  @ApiOperation({ summary: 'add score' })
+  @ApiOperation({ summary: 'add score', operationId: 'addScore' })
   @ApiResponse({ status: 201, type: AddScoreReturnDto })
   @UseGuards(JwtGuard)
   @UseGuards(LevelsGuard)
@@ -27,14 +27,14 @@ export class GamesController {
     return this.gamesService.addScore(dto, userId);
   }
 
-  @ApiOperation({ summary: 'get score' })
+  @ApiOperation({ summary: 'get score', operationId: 'getScoresByGameName' })
   @ApiResponse({ status: 200, type: AddScoreReturnDto })
   @Get('/score/:name')
   getScoresByGameName(@Param('name') name: string): Promise<AddScoreReturnDto> {
     return this.gamesService.getScoresByGameName(name);
   }
 
-  @ApiOperation({ summary: 'add winCount' })
+  @ApiOperation({ summary: 'add winCount', operationId: 'updateWinsCount' })
   @ApiResponse({ status: 201, type: [WinCountReturnDto] })
   @UseGuards(JwtGuard)
   @UseGuards(LevelsGuard)
@@ -46,7 +46,10 @@ export class GamesController {
     return this.gamesService.updateWinsCount(dto, userId);
   }
 
-  @ApiOperation({ summary: 'get winCount by game name' })
+  @ApiOperation({
+    summary: 'get winCount by game name',
+    operationId: 'getWinnersByGameName'
+  })
   @ApiResponse({ status: 200, type: [WinCountReturnDto] })
   @Get('/win/:name')
   getWinnersByGameName(
@@ -55,7 +58,10 @@ export class GamesController {
     return this.gamesService.getWinnersByGameName(name);
   }
 
-  @ApiOperation({ summary: 'get user game statistics' })
+  @ApiOperation({
+    summary: 'get user game statistics',
+    operationId: 'getMyStatistics'
+  })
   @ApiResponse({ status: 200, type: [ReturnStatisticDto] })
   @UseGuards(JwtGuard)
   @Get('/my_statistics')

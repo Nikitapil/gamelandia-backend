@@ -23,7 +23,7 @@ import { UserReturnDto } from '../auth/dto/user-return.dto';
 export class UsersController {
   constructor(private usersService: UsersService) {}
 
-  @ApiOperation({ summary: 'Edit user' })
+  @ApiOperation({ summary: 'Edit user', operationId: 'editUser' })
   @ApiResponse({ status: 200, type: UserReturnDto })
   @UseGuards(JwtGuard)
   @Put('/edit')
@@ -34,7 +34,7 @@ export class UsersController {
     return this.usersService.editUser(dto, userId);
   }
 
-  @ApiOperation({ summary: 'Delete user' })
+  @ApiOperation({ summary: 'Delete user', operationId: 'deleteUser' })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
   @Delete('/delete/:id')
