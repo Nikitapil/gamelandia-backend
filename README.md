@@ -5,4 +5,4 @@
  Quizzer frontend is here https://github.com/Nikitapil/quizzer-app
  
 ## Technologies used: 
-NodeJs, NestJS, PostgreSQL, Prisma, Swagger, JWT, Mailer, Class-validator, docker, pactum, eslint, prettier
+NodeJs, NestJS, PostgreSQL, Prisma, Swagger, JWT, Mailer, Class-validator, docker, pactum, vercel, eslint, prettier
