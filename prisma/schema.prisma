@@ -81,10 +81,11 @@ model Quiz {
   createdAt DateTime  @default(now())
   updatedAt DateTime? @updatedAt
 
-  name      String         @default("Untitled")
-  isPrivate Boolean        @default(false)
-  questions QuizQuestion[]
-  rating    QuizRating[]
+  name        String         @default("Untitled")
+  isPrivate   Boolean        @default(false)
+  isGenerated Boolean        @default(false)
+  questions   QuizQuestion[]
+  rating      QuizRating[]
 
   favouritedBy FavoritesQuizesOnUser[]
 

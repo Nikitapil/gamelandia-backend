@@ -31,4 +31,10 @@ export class SingleQuizReturnDto {
     type: Boolean
   })
   isInFavourites: boolean;
+
+  @ApiProperty({
+    description: 'is Quiz in favourites by current user',
+    type: Boolean
+  })
+  isGenerated: boolean;
 }

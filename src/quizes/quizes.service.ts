@@ -116,7 +116,8 @@ export class QuizesService {
           createMany: {
             data: questions
           }
-        }
+        },
+        isGenerated: true
       }
     });
     return { id: quiz.id };

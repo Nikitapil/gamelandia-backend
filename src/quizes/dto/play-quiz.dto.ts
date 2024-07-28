@@ -13,6 +13,12 @@ export class PlayQuizDto {
   @ApiProperty({ description: 'quiz privacy', type: Boolean })
   isPrivate: boolean;
 
+  @ApiProperty({
+    description: 'is Quiz generated or created by user',
+    type: Boolean
+  })
+  isGenerated: boolean;
+
   @ApiProperty({ description: 'quiz questions', type: [PlayQuestionDto] })
   questions: PlayQuestionDto[];
 
@@ -28,5 +34,6 @@ export class PlayQuizDto {
     this.name = quiz.name;
     this.questions = mapQuestionsToPlayQuestions(quiz.questions);
     this.isInFavourites = quiz.isInFavourites;
+    this.isGenerated = quiz.isGenerated;
   }
 }
