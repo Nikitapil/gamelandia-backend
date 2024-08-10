@@ -92,7 +92,9 @@ export class QuizesService {
     });
 
     return {
-      quizes: quizes.map((quiz) => new QuizDto(quiz, ratings)),
+      quizes: quizes.map(
+        (quiz) => new QuizDto({ quiz, ratings, currentUserId: userId })
+      ),
       totalCount
     };
   }
