@@ -33,6 +33,9 @@ export class QuizDto {
   @ApiProperty({ description: 'Ability to edit quiz', type: Boolean })
   canEdit: boolean;
 
+  @ApiProperty({ description: 'Ability to delete quiz', type: Boolean })
+  canDelete: boolean;
+
   @ApiProperty({ description: 'count of quiz questions', type: Number })
   questionsCount: number;
 
@@ -55,6 +58,7 @@ export class QuizDto {
     this.questionsCount = quiz._count.questions;
     this.author = quiz.User?.username || null;
     this.canEdit = isUserIdsEquals;
+    this.canDelete = isUserIdsEquals || currentUser.role === 'Admin';
     this.getRating(ratings);
   }
 
