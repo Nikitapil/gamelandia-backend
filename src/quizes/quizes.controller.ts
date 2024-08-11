@@ -29,6 +29,7 @@ import { CorrectAnswerReturnDto } from './dto/correct-answer-return.dto';
 import { QuizCategoriesReturnDto } from './dto/quiz-categories-return.dto';
 import { CategoryCountReturnDto } from './dto/category-count-return.dto';
 import { TUserRole } from '../types';
+import { UserReturnDto } from '../auth/dto/user-return.dto';
 
 @ApiTags('Quizes')
 @Controller('quizes')
@@ -69,10 +70,9 @@ export class QuizesController {
   @Post('/all')
   getAllQuizes(
     @Body() dto: GetAllQuizesDto,
-    @User('id') userId?: number,
-    @User('role') userRole?: TUserRole
+    @User() user?: UserReturnDto
   ): Promise<AllQuizesReturnDto> {
-    return this.quizesService.getAllQuizes(dto, userId, userRole);
+    return this.quizesService.getAllQuizes(dto, user);
   }
 
   @ApiOperation({ summary: 'Get single quiz', operationId: 'getQuiz' })
@@ -136,15 +136,9 @@ export class QuizesController {
   getQuizesByUser(
     @Body() dto: GetAllQuizesDto,
     @Param('id', ParseIntPipe) userId: number,
-    @User('id') currentUserId?: number,
-    @User('role') userRole?: TUserRole
+    @User() currentUser?: UserReturnDto
   ): Promise<AllQuizesReturnDto> {
-    return this.quizesService.getUserQuizes(
-      dto,
-      userId,
-      currentUserId,
-      userRole
-    );
+    return this.quizesService.getUserQuizes(dto, userId, currentUser);
   }
 
   @ApiOperation({ summary: 'delete quiz', operationId: 'deleteQuiz' })
@@ -190,9 +184,9 @@ export class QuizesController {
   @Post('/favourite')
   getFavouritesQuizes(
     @Body() dto: GetAllQuizesDto,
-    @User('id') userId: number
+    @User() user: UserReturnDto
   ): Promise<AllQuizesReturnDto> {
-    return this.quizesService.getFavouritesQuizes(dto, userId);
+    return this.quizesService.getFavouritesQuizes(dto, user);
   }
 
   @ApiOperation({

@@ -1,5 +1,6 @@
 import { FavoritesQuizesOnUser, Quiz, Prisma } from '@prisma/client';
 import { GetAllQuizesDto } from './dto/get-all-quizes.dto';
+import { UserReturnDto } from '../auth/dto/user-return.dto';
 
 export interface IGeneratedQuestion {
   category: string;
@@ -33,7 +34,7 @@ export type TQuizWhereInput = Prisma.QuizWhereInput;
 
 export interface IGetQuizesParams {
   dto: GetAllQuizesDto;
-  userId: number;
+  currentUser: UserReturnDto | undefined;
   where: TQuizWhereInput;
 }
 

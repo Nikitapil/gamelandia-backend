@@ -1,10 +1,11 @@
 import { TAllQuizesItem, TRatingResponseFromDb } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
+import { UserReturnDto } from '../../auth/dto/user-return.dto';
 
 interface QuizDtoParams {
   quiz: TAllQuizesItem;
   ratings: TRatingResponseFromDb;
-  currentUserId: number;
+  currentUser: UserReturnDto | undefined;
 }
 
 export class QuizDto {
@@ -41,8 +42,8 @@ export class QuizDto {
   @ApiProperty({ description: 'quiz rating', type: Number, nullable: true })
   rating: number | null;
 
-  constructor({ quiz, ratings, currentUserId }: QuizDtoParams) {
-    const isUserIdsEquals = currentUserId === quiz.userId;
+  constructor({ quiz, ratings, currentUser }: QuizDtoParams) {
+    const isUserIdsEquals = currentUser?.id === quiz.userId;
 
     this.id = quiz.id;
     this.createdAt = quiz.createdAt;

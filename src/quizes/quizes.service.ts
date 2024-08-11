@@ -32,6 +32,7 @@ import { CorrectAnswerReturnDto } from './dto/correct-answer-return.dto';
 import { QuizCategoriesReturnDto } from './dto/quiz-categories-return.dto';
 import { CategoryCountReturnDto } from './dto/category-count-return.dto';
 import { TUserRole } from '../types';
+import { UserReturnDto } from '../auth/dto/user-return.dto';
 
 @Injectable()
 export class QuizesService {
@@ -42,7 +43,7 @@ export class QuizesService {
 
   private async getManyQuizes({
     dto,
-    userId,
+    currentUser,
     where
   }: IGetQuizesParams): Promise<AllQuizesReturnDto> {
     const { page = 1, limit = 10, search = '' } = dto;
@@ -69,7 +70,7 @@ export class QuizesService {
         },
         favouritedBy: {
           where: {
-            userId: userId || 0
+            userId: currentUser?.id || 0
           }
         },
         User: {
@@ -92,9 +93,7 @@ export class QuizesService {
     });
 
     return {
-      quizes: quizes.map(
-        (quiz) => new QuizDto({ quiz, ratings, currentUserId: userId })
-      ),
+      quizes: quizes.map((quiz) => new QuizDto({ quiz, ratings, currentUser })),
       totalCount
     };
   }
@@ -127,11 +126,10 @@ export class QuizesService {
 
   async getAllQuizes(
     dto: GetAllQuizesDto,
-    userId?: number,
-    userRole?: TUserRole
+    user: UserReturnDto | undefined
   ): Promise<AllQuizesReturnDto> {
     const where: TQuizWhereInput =
-      userRole === 'Admin'
+      user?.role === 'Admin'
         ? {}
         : {
             OR: [
@@ -139,28 +137,27 @@ export class QuizesService {
                 isPrivate: false
               },
               {
-                userId
+                userId: user?.id || 0
               }
             ]
           };
-    return this.getManyQuizes({ dto, userId, where });
+    return this.getManyQuizes({ dto, where, currentUser: user });
   }
 
   async getUserQuizes(
     dto: GetAllQuizesDto,
     userId: number,
-    currentUserId?: number,
-    userRole?: TUserRole
+    currentUser: UserReturnDto | undefined
   ) {
     const where: TQuizWhereInput = {
       userId
     };
 
-    if (userId !== currentUserId && userRole !== 'Admin') {
+    if (userId !== currentUser?.id && currentUser?.role !== 'Admin') {
       where.isPrivate = false;
     }
 
-    return this.getManyQuizes({ dto, userId: currentUserId, where });
+    return this.getManyQuizes({ dto, currentUser, where });
   }
 
   async createQuiz(
@@ -409,14 +406,17 @@ export class QuizesService {
     return { message: 'success' };
   }
 
-  async getFavouritesQuizes(dto: GetAllQuizesDto, userId: number) {
+  async getFavouritesQuizes(
+    dto: GetAllQuizesDto,
+    currentUser: UserReturnDto | undefined
+  ) {
     const where: TQuizWhereInput = {
       favouritedBy: {
         some: {
-          userId
+          userId: currentUser?.id
         }
       }
     };
-    return this.getManyQuizes({ dto, userId, where });
+    return this.getManyQuizes({ dto, currentUser, where });
   }
 }
