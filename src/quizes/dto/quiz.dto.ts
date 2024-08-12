@@ -1,6 +1,7 @@
 import { TAllQuizesItem, TRatingResponseFromDb } from '../types';
 import { ApiProperty } from '@nestjs/swagger';
 import { UserReturnDto } from '../../auth/dto/user-return.dto';
+import { QuizActions } from './security/quiz-actions';
 
 interface QuizDtoParams {
   quiz: TAllQuizesItem;
@@ -8,7 +9,7 @@ interface QuizDtoParams {
   currentUser: UserReturnDto | undefined;
 }
 
-export class QuizDto {
+export class QuizDto extends QuizActions {
   @ApiProperty({ description: 'quiz id', type: String })
   id: string;
 
@@ -30,12 +31,6 @@ export class QuizDto {
   @ApiProperty({ description: 'is quiz in users favourites', type: Boolean })
   isInFavourites: boolean;
 
-  @ApiProperty({ description: 'Ability to edit quiz', type: Boolean })
-  canEdit: boolean;
-
-  @ApiProperty({ description: 'Ability to delete quiz', type: Boolean })
-  canDelete: boolean;
-
   @ApiProperty({ description: 'count of quiz questions', type: Number })
   questionsCount: number;
 
@@ -46,7 +41,7 @@ export class QuizDto {
   rating: number | null;
 
   constructor({ quiz, ratings, currentUser }: QuizDtoParams) {
-    const isUserIdsEquals = currentUser?.id === quiz.userId;
+    super({ quiz, user: currentUser });
 
     this.id = quiz.id;
     this.createdAt = quiz.createdAt;
@@ -57,8 +52,6 @@ export class QuizDto {
     this.isInFavourites = !!quiz.favouritedBy.length;
     this.questionsCount = quiz._count.questions;
     this.author = quiz.User?.username || null;
-    this.canEdit = isUserIdsEquals;
-    this.canDelete = isUserIdsEquals || currentUser.role === 'Admin';
     this.getRating(ratings);
   }
 
