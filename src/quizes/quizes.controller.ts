@@ -79,8 +79,11 @@ export class QuizesController {
   @ApiResponse({ status: 200, type: SingleQuizReturnDto })
   @UseGuards(JwtGuard)
   @Get('/quiz/:id')
-  getQuiz(@Param('id') quizId: string): Promise<SingleQuizReturnDto> {
-    return this.quizesService.getQuiz(quizId);
+  getQuiz(
+    @Param('id') quizId: string,
+    @User() user?: UserReturnDto
+  ): Promise<SingleQuizReturnDto> {
+    return this.quizesService.getQuiz({ quizId, user });
   }
 
   @ApiOperation({ summary: 'Get quiz for play', operationId: 'getPlayQuiz' })
@@ -89,9 +92,9 @@ export class QuizesController {
   @Get('/play/:id')
   getPlayQuiz(
     @Param('id') quizId: string,
-    @User('id') userId?: number
+    @User() user?: UserReturnDto
   ): Promise<PlayQuizDto> {
-    return this.quizesService.getPlayQuiz(quizId, userId);
+    return this.quizesService.getPlayQuiz({ quizId, user });
   }
 
   @ApiOperation({

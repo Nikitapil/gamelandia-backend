@@ -17,6 +17,6 @@ export class QuizActions {
     const isUserIdsEquals = user?.id === quiz.userId;
 
     this.canEdit = isUserIdsEquals;
-    this.canDelete = isUserIdsEquals || user.role === 'Admin';
+    this.canDelete = isUserIdsEquals || user?.role === 'Admin';
   }
 }

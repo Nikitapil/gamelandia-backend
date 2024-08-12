@@ -11,6 +11,7 @@ import {
   ICategoryResponse,
   IGeneratedQuestion,
   IGetQuizesParams,
+  IGetQuizMethodParams,
   TQuizWhereInput
 } from './types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -185,7 +186,10 @@ export class QuizesService {
     }
   }
 
-  async getQuiz(quizId: string, userId?: number): Promise<SingleQuizReturnDto> {
+  async getQuiz({
+    quizId,
+    user
+  }: IGetQuizMethodParams): Promise<SingleQuizReturnDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
@@ -194,7 +198,7 @@ export class QuizesService {
         questions: true,
         favouritedBy: {
           where: {
-            userId: userId || 0
+            userId: user?.id || 0
           }
         }
       }
@@ -213,17 +217,18 @@ export class QuizesService {
       }
     });
 
-    const { favouritedBy, ...cleanQuiz } = quiz;
+    const { favouritedBy } = quiz;
 
-    return {
-      ...cleanQuiz,
+    return new SingleQuizReturnDto({
       rating: rating._avg.rating,
-      isInFavourites: !!favouritedBy.length
-    };
+      quiz: quiz,
+      isInFavourites: !!favouritedBy.length,
+      currentUser: user
+    });
   }
 
-  async getPlayQuiz(quizId: string, userId?: number) {
-    const quiz = await this.getQuiz(quizId, userId);
+  async getPlayQuiz({ quizId, user }: IGetQuizMethodParams) {
+    const quiz = await this.getQuiz({ quizId, user });
     return new PlayQuizDto(quiz);
   }
 

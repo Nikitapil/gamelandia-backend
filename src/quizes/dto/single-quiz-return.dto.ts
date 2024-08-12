@@ -1,7 +1,17 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { QuizQuestionReturnDto } from './quiz-question-return.dto';
+import { Quiz, QuizQuestion } from '@prisma/client';
+import { QuizActions } from './security/quiz-actions';
+import { UserReturnDto } from '../../auth/dto/user-return.dto';
 
-export class SingleQuizReturnDto {
+interface ISingleQuizReturnDtoParams {
+  quiz: Quiz & { questions: QuizQuestion[] };
+  rating: number;
+  isInFavourites: boolean;
+  currentUser: UserReturnDto | undefined;
+}
+
+export class SingleQuizReturnDto extends QuizActions {
   @ApiPropertyOptional({ description: 'quiz rating', type: Number })
   rating?: number;
 
@@ -37,4 +47,24 @@ export class SingleQuizReturnDto {
     type: Boolean
   })
   isGenerated: boolean;
+
+  constructor({
+    rating,
+    quiz,
+    isInFavourites,
+    currentUser
+  }: ISingleQuizReturnDtoParams) {
+    super({ quiz, user: currentUser });
+    this.rating = rating;
+    this.isInFavourites = isInFavourites;
+
+    this.id = quiz.id;
+    this.createdAt = quiz.createdAt;
+    this.updatedAt = quiz.updatedAt;
+    this.name = quiz.name;
+    this.isPrivate = quiz.isPrivate;
+    this.userId = quiz.userId;
+    this.questions = quiz.questions;
+    this.isGenerated = quiz.isGenerated;
+  }
 }

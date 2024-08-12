@@ -38,6 +38,11 @@ export interface IGetQuizesParams {
   where: TQuizWhereInput;
 }
 
+export interface IGetQuizMethodParams {
+  quizId: string;
+  user: UserReturnDto | undefined;
+}
+
 export type TRatingResponseFromDb = (Prisma.PickArray<
   Prisma.QuizRatingGroupByOutputType,
   'quizId'[]
