@@ -66,6 +66,11 @@ export enum EQuizDifficulties {
   HARD = 'hard'
 }
 
+export interface IToggleQuizInFavoritesParams {
+  quizId: string;
+  userId: number;
+}
+
 export const QuizDifficulties = [
   EQuizDifficulties.EASY,
   EQuizDifficulties.MEDIUM,

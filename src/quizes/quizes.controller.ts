@@ -6,6 +6,7 @@ import {
   HttpCode,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
   Put,
   UseGuards
@@ -193,30 +194,16 @@ export class QuizesController {
   }
 
   @ApiOperation({
-    summary: 'Add quiz to favourites',
-    operationId: 'addQuizToFavourites'
-  })
-  @ApiResponse({ status: 201, type: SuccessMessageDto })
-  @UseGuards(JwtGuard)
-  @Post('/favourite/:id')
-  addQuizToFavourites(
-    @Param('id') quizId: string,
-    @User('id') userId: number
-  ): Promise<SuccessMessageDto> {
-    return this.quizesService.addQuizToFavourites(quizId, userId);
-  }
-
-  @ApiOperation({
-    summary: 'Remove quiz from favourites',
-    operationId: 'removeQuizFromFavourites'
+    summary: 'Toggle quiz in favorites',
+    operationId: 'toggleQuizInFavourites'
   })
   @ApiResponse({ status: 200, type: SuccessMessageDto })
   @UseGuards(JwtGuard)
-  @Delete('/favourite/:id')
-  removeQuizFromFavourites(
+  @Patch('/favourite/:id')
+  toggleQuizInFavourites(
     @Param('id') quizId: string,
     @User('id') userId: number
   ): Promise<SuccessMessageDto> {
-    return this.quizesService.removeQuizFromFavourites(quizId, userId);
+    return this.quizesService.toggleQuizInFavorites({ quizId, userId });
   }
 }

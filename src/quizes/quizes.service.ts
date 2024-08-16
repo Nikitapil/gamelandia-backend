@@ -12,6 +12,7 @@ import {
   IGeneratedQuestion,
   IGetQuizesParams,
   IGetQuizMethodParams,
+  IToggleQuizInFavoritesParams,
   TQuizWhereInput
 } from './types';
 import { PrismaService } from '../prisma/prisma.service';
@@ -361,13 +362,20 @@ export class QuizesService {
     });
   }
 
-  async addQuizToFavourites(
-    quizId: string,
-    userId: number
-  ): Promise<SuccessMessageDto> {
+  async toggleQuizInFavorites({
+    quizId,
+    userId
+  }: IToggleQuizInFavoritesParams): Promise<SuccessMessageDto> {
     const quiz = await this.prismaService.quiz.findUnique({
       where: {
         id: quizId
+      },
+      include: {
+        favouritedBy: {
+          where: {
+            userId
+          }
+        }
       }
     });
 
@@ -375,10 +383,15 @@ export class QuizesService {
       throw new NotFoundException('quiz_not_found');
     }
 
-    const candidate = await this.getFavouriteQuizOnUser(quizId, userId);
-    if (candidate) {
-      throw new BadRequestException('already_in_favourites');
-    }
+    return quiz.favouritedBy.length
+      ? this.removeQuizFromFavourites(quizId, userId)
+      : this.addQuizToFavourites(quizId, userId);
+  }
+
+  async addQuizToFavourites(
+    quizId: string,
+    userId: number
+  ): Promise<SuccessMessageDto> {
     await this.prismaService.favoritesQuizesOnUser.create({
       data: {
         quizId,
@@ -393,12 +406,6 @@ export class QuizesService {
     quizId: string,
     userId: number
   ): Promise<SuccessMessageDto> {
-    const candidate = await this.getFavouriteQuizOnUser(quizId, userId);
-
-    if (!candidate) {
-      throw new BadRequestException('not_in_favourites');
-    }
-
     await this.prismaService.favoritesQuizesOnUser.delete({
       where: {
         userId_quizId: {
