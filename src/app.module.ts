@@ -6,7 +6,6 @@ import { UsersModule } from './users/users.module';
 import { MailingModule } from './mailing/mailing.module';
 import { QuizesModule } from './quizes/quizes.module';
 import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
-import { QuizCmmentsService } from './quiz-cmments/quiz-cmments.service';
 
 @Module({
   imports: [
@@ -17,7 +16,6 @@ import { QuizCmmentsService } from './quiz-cmments/quiz-cmments.service';
     MailingModule,
     QuizesModule,
     QuizCommentsModule
-  ],
-  providers: [QuizCmmentsService]
+  ]
 })
 export class AppModule {}
