@@ -1,4 +1,12 @@
-import { Body, Controller, Post, Put, UseGuards } from "@nestjs/common";
+import {
+  Body,
+  Controller,
+  Delete,
+  Param,
+  Post,
+  Put,
+  UseGuards
+} from '@nestjs/common';
 import { QuizCommentsService } from './quiz-comments.service';
 import { AddQuizCommentDto } from './dto/AddQuizCommentDto';
 import { User } from '../decorators/User.decorator';
@@ -6,7 +14,8 @@ import { UserReturnDto } from '../auth/dto/user-return.dto';
 import { QuizCommentReturnDto } from './dto/QuizCommentReturnDto';
 import { JwtGuard } from '../guards/auth/jwt.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { EditQuizCommentDto } from "./dto/EditQuizCommentDto";
+import { EditQuizCommentDto } from './dto/EditQuizCommentDto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
 
 @Controller('quiz-comments')
 export class QuizCommentsController {
@@ -38,5 +47,19 @@ export class QuizCommentsController {
     @User() user: UserReturnDto
   ): Promise<QuizCommentReturnDto> {
     return this.quizCommentsService.editQuizComment({ dto, user });
+  }
+
+  @ApiOperation({
+    summary: 'Delete comment quiz',
+    operationId: 'deleteQuizComment'
+  })
+  @ApiResponse({ status: 200, type: SuccessMessageDto })
+  @UseGuards(JwtGuard)
+  @Delete(':id')
+  deleteQuizComment(
+    @Param('id') quizId: string,
+    @User() user: UserReturnDto
+  ): Promise<SuccessMessageDto> {
+    return this.quizCommentsService.deleteQuizComment({ id: quizId, user });
   }
 }

@@ -1,8 +1,17 @@
-import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { AddQuizCommentsParams, EditQuizCommentsParams } from './types';
+import {
+  AddQuizCommentsParams,
+  DeleteQuizCommentsParams,
+  EditQuizCommentsParams
+} from './types';
 import { commentInclude } from './helpers/db-helpers';
 import { QuizCommentReturnDto } from './dto/QuizCommentReturnDto';
+import { SuccessMessageDto } from '../dto/success-message.dto';
 
 @Injectable()
 export class QuizCommentsService {
@@ -61,5 +70,31 @@ export class QuizCommentsService {
     });
 
     return new QuizCommentReturnDto({ quizCommentFromDb: updatedQuiz, user });
+  }
+
+  async deleteQuizComment({ id, user }: DeleteQuizCommentsParams) {
+    const comment = await this.prismaService.quizComment.findUnique({
+      where: { id },
+      include: commentInclude
+    });
+
+    if (!comment) {
+      throw new NotFoundException(`Comment not found`);
+    }
+
+    const { canDelete } = new QuizCommentReturnDto({
+      quizCommentFromDb: comment,
+      user
+    });
+
+    if (!canDelete) {
+      throw new ForbiddenException('Delete comment not allowed');
+    }
+
+    await this.prismaService.quizComment.delete({
+      where: { id }
+    });
+
+    return new SuccessMessageDto();
   }
 }

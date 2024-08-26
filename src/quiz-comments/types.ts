@@ -13,6 +13,11 @@ export interface EditQuizCommentsParams {
   dto: EditQuizCommentDto;
 }
 
+export interface DeleteQuizCommentsParams {
+  user: UserReturnDto;
+  id: string;
+}
+
 export type QuizCommentFromDb = QuizComment & {
   user?: {
     username: string;
