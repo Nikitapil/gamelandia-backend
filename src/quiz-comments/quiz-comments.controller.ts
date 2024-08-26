@@ -1,4 +1,4 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Post, Put, UseGuards } from "@nestjs/common";
 import { QuizCommentsService } from './quiz-comments.service';
 import { AddQuizCommentDto } from './dto/AddQuizCommentDto';
 import { User } from '../decorators/User.decorator';
@@ -6,7 +6,7 @@ import { UserReturnDto } from '../auth/dto/user-return.dto';
 import { QuizCommentReturnDto } from './dto/QuizCommentReturnDto';
 import { JwtGuard } from '../guards/auth/jwt.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
-import { AllQuizesReturnDto } from '../quizes/dto/all-quizes-return.dto';
+import { EditQuizCommentDto } from "./dto/EditQuizCommentDto";
 
 @Controller('quiz-comments')
 export class QuizCommentsController {
@@ -16,7 +16,7 @@ export class QuizCommentsController {
     summary: 'Add comment quiz',
     operationId: 'createQuizComment'
   })
-  @ApiResponse({ status: 200, type: AllQuizesReturnDto })
+  @ApiResponse({ status: 200, type: QuizCommentReturnDto })
   @UseGuards(JwtGuard)
   @Post()
   createQuizComment(
@@ -24,5 +24,19 @@ export class QuizCommentsController {
     @User() user: UserReturnDto
   ): Promise<QuizCommentReturnDto> {
     return this.quizCommentsService.addQuizComment({ dto, user });
+  }
+
+  @ApiOperation({
+    summary: 'Edit comment quiz',
+    operationId: 'editQuizComment'
+  })
+  @ApiResponse({ status: 200, type: QuizCommentReturnDto })
+  @UseGuards(JwtGuard)
+  @Put()
+  editQuizComment(
+    @Body() dto: EditQuizCommentDto,
+    @User() user: UserReturnDto
+  ): Promise<QuizCommentReturnDto> {
+    return this.quizCommentsService.editQuizComment({ dto, user });
   }
 }

@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/common";
 import { PrismaService } from '../prisma/prisma.service';
-import { AddQuizCommentsParams } from './types';
+import { AddQuizCommentsParams, EditQuizCommentsParams } from './types';
 import { commentInclude } from './helpers/db-helpers';
 import { QuizCommentReturnDto } from './dto/QuizCommentReturnDto';
 
@@ -31,5 +31,35 @@ export class QuizCommentsService {
     });
 
     return new QuizCommentReturnDto({ quizCommentFromDb: newComment, user });
+  }
+
+  async editQuizComment({ user, dto }: EditQuizCommentsParams) {
+    const comment = await this.prismaService.quizComment.findUnique({
+      where: { id: dto.id },
+      include: commentInclude
+    });
+
+    if (!comment) {
+      throw new NotFoundException(`Comment with not found`);
+    }
+
+    const { canEdit } = new QuizCommentReturnDto({
+      quizCommentFromDb: comment,
+      user
+    });
+
+    if (!canEdit) {
+      throw new ForbiddenException('Edit comment not allowed');
+    }
+
+    const updatedQuiz = await this.prismaService.quizComment.update({
+      where: { id: dto.id },
+      data: {
+        text: dto.text
+      },
+      include: commentInclude
+    });
+
+    return new QuizCommentReturnDto({ quizCommentFromDb: updatedQuiz, user });
   }
 }
