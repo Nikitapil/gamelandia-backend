@@ -141,10 +141,10 @@ model QuizComment {
 
   text String @db.Text
 
-  Quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
+  quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade)
   quizId String
 
-  User   User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId Int
 
   replyToId String?
