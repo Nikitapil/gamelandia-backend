@@ -69,7 +69,7 @@ export class QuizCommentsController {
 
   @ApiOperation({
     summary: 'get quizComments',
-    operationId: 'deleteQuizComment'
+    operationId: 'getQuizComments'
   })
   @ApiResponse({ status: 200, type: [QuizCommentReturnDto] })
   @UseGuards(ApplyUserGuard)

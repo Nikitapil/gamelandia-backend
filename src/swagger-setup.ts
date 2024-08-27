@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { GamesModule } from './games/games.module';
 import { UsersModule } from './users/users.module';
 import { QuizesModule } from './quizes/quizes.module';
+import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
 
 export const swaggerSetup = (app: INestApplication) => {
   // Auth Module docs
@@ -68,7 +69,7 @@ export const swaggerSetup = (app: INestApplication) => {
     app,
     quizesModuleOptions,
     {
-      include: [QuizesModule]
+      include: [QuizesModule, QuizCommentsModule]
     }
   );
 
