@@ -4,7 +4,7 @@ import { UserReturnDto } from '../../auth/dto/user-return.dto';
 
 interface IQuizCommentReturnDtoParams {
   quizCommentFromDb: QuizCommentFromDb;
-  user: UserReturnDto;
+  user?: UserReturnDto;
 }
 
 export class QuizCommentReturnDto {
@@ -14,8 +14,12 @@ export class QuizCommentReturnDto {
   @ApiProperty({ description: 'comment created date', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'comment updated date', type: String })
-  updatedAt: Date;
+  @ApiProperty({
+    description: 'comment updated date',
+    type: String,
+    nullable: true
+  })
+  updatedAt: Date | null;
 
   @ApiProperty({ description: 'comment text', type: String })
   text: string;
@@ -31,7 +35,7 @@ export class QuizCommentReturnDto {
     type: String,
     nullable: true
   })
-  replyToId?: string;
+  replyToId?: string | null;
 
   @ApiProperty({ description: 'comment  author name', type: String })
   authorName: string;
@@ -46,8 +50,8 @@ export class QuizCommentReturnDto {
   canDelete: boolean;
 
   constructor({ quizCommentFromDb, user }: IQuizCommentReturnDtoParams) {
-    const isCurrentUserAdmin = user.role === 'Admin';
-    const isUserIdsEquals = user.id === quizCommentFromDb.userId;
+    const isCurrentUserAdmin = user?.role === 'Admin';
+    const isUserIdsEquals = user?.id === quizCommentFromDb.userId;
 
     this.id = quizCommentFromDb.id;
     this.createdAt = quizCommentFromDb.createdAt;

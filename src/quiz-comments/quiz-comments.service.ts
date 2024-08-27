@@ -7,11 +7,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   AddQuizCommentsParams,
   DeleteQuizCommentsParams,
-  EditQuizCommentsParams
+  EditQuizCommentsParams,
+  GetQuizCommentsParams
 } from './types';
 import { commentInclude } from './helpers/db-helpers';
 import { QuizCommentReturnDto } from './dto/QuizCommentReturnDto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
+import { Prisma } from '.prisma/client';
+import { calculateOffset } from '../shared/helpers/calculations';
 
 @Injectable()
 export class QuizCommentsService {
@@ -96,5 +99,29 @@ export class QuizCommentsService {
     });
 
     return new SuccessMessageDto();
+  }
+
+  async getComments({ dto, user }: GetQuizCommentsParams) {
+    const where: Prisma.QuizCommentWhereInput = {
+      quizId: dto.quizId
+    };
+
+    if (dto.replyToId) {
+      where.replyToId = dto.replyToId;
+    }
+
+    const offset = calculateOffset(dto);
+
+    const comments = await this.prismaService.quizComment.findMany({
+      where,
+      take: dto.limit,
+      skip: offset,
+      include: commentInclude
+    });
+
+    return comments.map(
+      (comment) =>
+        new QuizCommentReturnDto({ quizCommentFromDb: comment, user })
+    );
   }
 }

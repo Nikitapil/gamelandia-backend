@@ -1,6 +1,4 @@
-import { Prisma } from '.prisma/client';
-
-export const commentInclude: Prisma.QuizCommentInclude = {
+export const commentInclude = {
   user: {
     select: {
       username: true
@@ -11,4 +9,4 @@ export const commentInclude: Prisma.QuizCommentInclude = {
       replies: true
     }
   }
-};
+} as const;

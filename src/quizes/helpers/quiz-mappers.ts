@@ -1,6 +1,6 @@
 import { IGeneratedQuestion } from '../types';
 import { QuizQuestion } from '@prisma/client';
-import { shuffleArray } from '../../helpers/arrays.helpers';
+import { shuffleArray } from '../../shared/helpers/arrays.helpers';
 import { PlayQuestionDto } from '../dto/play-question.dto';
 
 export const mapGeneratedQuestions = (questions: IGeneratedQuestion[]) => {

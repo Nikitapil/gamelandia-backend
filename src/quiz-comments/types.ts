@@ -2,6 +2,7 @@ import { AddQuizCommentDto } from './dto/AddQuizCommentDto';
 import { UserReturnDto } from '../auth/dto/user-return.dto';
 import { QuizComment } from '@prisma/client';
 import { EditQuizCommentDto } from './dto/EditQuizCommentDto';
+import { GetQuizCommentsQueryDto } from './dto/GetQuizCommentsQueryDto';
 
 export interface AddQuizCommentsParams {
   user: UserReturnDto;
@@ -18,11 +19,16 @@ export interface DeleteQuizCommentsParams {
   id: string;
 }
 
+export interface GetQuizCommentsParams {
+  dto: GetQuizCommentsQueryDto;
+  user?: UserReturnDto;
+}
+
 export type QuizCommentFromDb = QuizComment & {
-  user?: {
+  user: {
     username: string;
   };
-  _count?: {
+  _count: {
     replies?: number;
   };
 };

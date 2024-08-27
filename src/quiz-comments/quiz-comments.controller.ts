@@ -2,9 +2,11 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   Post,
   Put,
+  Query,
   UseGuards
 } from '@nestjs/common';
 import { QuizCommentsService } from './quiz-comments.service';
@@ -16,6 +18,8 @@ import { JwtGuard } from '../guards/auth/jwt.guard';
 import { ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { EditQuizCommentDto } from './dto/EditQuizCommentDto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
+import { ApplyUserGuard } from '../guards/auth/apply-user.guard';
+import { GetQuizCommentsQueryDto } from './dto/GetQuizCommentsQueryDto';
 
 @Controller('quiz-comments')
 export class QuizCommentsController {
@@ -61,5 +65,19 @@ export class QuizCommentsController {
     @User() user: UserReturnDto
   ): Promise<SuccessMessageDto> {
     return this.quizCommentsService.deleteQuizComment({ id: quizId, user });
+  }
+
+  @ApiOperation({
+    summary: 'get quizComments',
+    operationId: 'deleteQuizComment'
+  })
+  @ApiResponse({ status: 200, type: [QuizCommentReturnDto] })
+  @UseGuards(ApplyUserGuard)
+  @Get()
+  getQuizComments(
+    @Query() dto: GetQuizCommentsQueryDto,
+    @User() user?: UserReturnDto
+  ): Promise<QuizCommentReturnDto[]> {
+    return this.quizCommentsService.getComments({ dto, user });
   }
 }
