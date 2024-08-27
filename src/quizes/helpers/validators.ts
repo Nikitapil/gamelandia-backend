@@ -14,7 +14,7 @@ export const validateQuizQuestions = (questions: CreateQuizQuestionDto[]) => {
 
 export const validateQuizForUser = (
   userId: number,
-  quiz?: Quiz,
+  quiz?: Quiz | null,
   role?: TUserRole
 ) => {
   if (!quiz) {

@@ -205,6 +205,10 @@ export class AuthService {
     const restoreKey = v4();
     const clientUrl = process.env.CLIENT_URL;
 
+    if (!clientUrl) {
+      throw new BadRequestException('Something went wrong');
+    }
+
     await this.prisma.user.update({
       where: {
         email

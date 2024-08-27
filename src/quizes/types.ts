@@ -14,7 +14,7 @@ export interface IGeneratedQuestion {
 export type TAllQuizesItem = Quiz & {
   favouritedBy: FavoritesQuizesOnUser[];
   _count: { questions: number };
-  User?: { username: string };
+  User?: { username: string } | null;
 };
 
 export interface IPlayQuestion {
@@ -46,7 +46,7 @@ export interface IGetQuizMethodParams {
 export type TRatingResponseFromDb = (Prisma.PickArray<
   Prisma.QuizRatingGroupByOutputType,
   'quizId'[]
-> & { _avg: { rating: number } })[];
+> & { _avg: { rating: number | null } })[];
 
 export interface ICategoryQuestionResponse {
   category_id: number;

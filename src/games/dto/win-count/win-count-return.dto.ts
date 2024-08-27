@@ -15,9 +15,10 @@ export class WinCountReturnDto {
   @ApiProperty({
     example: '12023-04-25T12:34:32.191Z',
     description: 'created date property',
-    type: String
+    type: String,
+    nullable: true,
   })
-  updatedAt: Date;
+  updatedAt: Date | null;
 
   @ApiProperty({ example: '1', description: 'winCount value', type: Number })
   value: number;

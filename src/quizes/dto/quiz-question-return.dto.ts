@@ -7,8 +7,12 @@ export class QuizQuestionReturnDto {
   @ApiProperty({ description: 'question created at', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'question updated at', type: String })
-  updatedAt: Date;
+  @ApiProperty({
+    description: 'question updated at',
+    type: String,
+    nullable: true
+  })
+  updatedAt: Date | null;
 
   @ApiProperty({ description: 'question', type: String })
   question: string;

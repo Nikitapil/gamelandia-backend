@@ -105,8 +105,8 @@ model QuizQuestion {
   correctAnswer    String
   incorrectAnswers String[]
 
-  Quiz   Quiz?   @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
-  quizId String?
+  Quiz   Quiz   @relation(fields: [quizId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  quizId String
 }
 
 model QuizRating {

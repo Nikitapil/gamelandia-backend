@@ -52,7 +52,7 @@ export class GamesService {
     });
 
     return {
-      scores,
+      scores: scores.flat(),
       withLevels: false
     };
   }

@@ -16,8 +16,8 @@ export class QuizDto extends QuizActions {
   @ApiProperty({ description: 'created date', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'updated date', type: String })
-  updatedAt: Date;
+  @ApiProperty({ description: 'updated date', type: String, nullable: true })
+  updatedAt: Date | null;
 
   @ApiProperty({ description: 'quiz name', type: String })
   name: string;

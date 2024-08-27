@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { UserReturnDto } from '../../../auth/dto/user-return.dto';
 
 interface QuizActionsParams {
-  quiz: { userId: number };
+  quiz: { userId?: number | null };
   user: UserReturnDto | undefined;
 }
 

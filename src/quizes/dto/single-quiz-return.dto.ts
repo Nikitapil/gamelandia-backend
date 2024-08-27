@@ -6,14 +6,18 @@ import { UserReturnDto } from '../../auth/dto/user-return.dto';
 
 interface ISingleQuizReturnDtoParams {
   quiz: Quiz & { questions: QuizQuestion[] };
-  rating: number;
+  rating: number | null;
   isInFavourites: boolean;
   currentUser: UserReturnDto | undefined;
 }
 
 export class SingleQuizReturnDto extends QuizActions {
-  @ApiPropertyOptional({ description: 'quiz rating', type: Number })
-  rating?: number;
+  @ApiPropertyOptional({
+    description: 'quiz rating',
+    type: Number,
+    nullable: true
+  })
+  rating?: number | null;
 
   @ApiProperty({ description: 'quiz id', type: String })
   id: string;
@@ -21,8 +25,12 @@ export class SingleQuizReturnDto extends QuizActions {
   @ApiProperty({ description: 'quiz created date', type: String })
   createdAt: Date;
 
-  @ApiProperty({ description: 'quiz updated date', type: String })
-  updatedAt: Date;
+  @ApiProperty({
+    description: 'quiz updated date',
+    type: String,
+    nullable: true
+  })
+  updatedAt: Date | null;
 
   @ApiProperty({ description: 'quiz name', type: String })
   name: string;
@@ -30,8 +38,8 @@ export class SingleQuizReturnDto extends QuizActions {
   @ApiProperty({ description: 'quiz created date', type: Boolean })
   isPrivate: boolean;
 
-  @ApiProperty({ description: 'quiz author id', type: Number })
-  userId: number;
+  @ApiProperty({ description: 'quiz author id', type: Number, nullable: true })
+  userId: number | null;
 
   @ApiProperty({ description: 'quiz questions', type: [QuizQuestionReturnDto] })
   questions: QuizQuestionReturnDto[];

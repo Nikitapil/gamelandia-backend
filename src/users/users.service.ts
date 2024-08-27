@@ -29,7 +29,7 @@ export class UsersService {
           email: dto.email
         }
       });
-      if (userByEmail && userByEmail.id !== user.id) {
+      if (userByEmail && userByEmail.id !== user?.id) {
         throw new BadRequestException('This email already exist');
       }
     }

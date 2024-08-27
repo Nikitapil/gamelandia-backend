@@ -15,9 +15,10 @@ export class ScoreReturnDto {
   @ApiProperty({
     example: '12023-04-25T12:34:32.191Z',
     description: 'created date property',
-    type: String
+    type: String,
+    nullable: true
   })
-  updatedAt: Date;
+  updatedAt: Date | null;
 
   @ApiProperty({ example: '1', description: 'score value', type: Number })
   value: number;
@@ -36,9 +37,10 @@ export class ScoreReturnDto {
   @ApiProperty({
     example: '1',
     description: 'userId of score owner',
-    type: Number
+    type: Number,
+    nullable: true
   })
-  userId: number;
+  userId: number | null;
 
   @ApiProperty({
     example: { username: 'Nick' },
