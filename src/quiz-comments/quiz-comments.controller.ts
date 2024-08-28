@@ -20,6 +20,7 @@ import { EditQuizCommentDto } from './dto/EditQuizCommentDto';
 import { SuccessMessageDto } from '../dto/success-message.dto';
 import { ApplyUserGuard } from '../guards/auth/apply-user.guard';
 import { GetQuizCommentsQueryDto } from './dto/GetQuizCommentsQueryDto';
+import { ManyCommentsReturnDto } from './dto/ManyCommentsReturnDto';
 
 @Controller('quiz-comments')
 export class QuizCommentsController {
@@ -71,13 +72,13 @@ export class QuizCommentsController {
     summary: 'get quizComments',
     operationId: 'getQuizComments'
   })
-  @ApiResponse({ status: 200, type: [QuizCommentReturnDto] })
+  @ApiResponse({ status: 200, type: ManyCommentsReturnDto })
   @UseGuards(ApplyUserGuard)
   @Get()
   getQuizComments(
     @Query() dto: GetQuizCommentsQueryDto,
     @User() user?: UserReturnDto
-  ): Promise<QuizCommentReturnDto[]> {
+  ): Promise<ManyCommentsReturnDto> {
     return this.quizCommentsService.getComments({ dto, user });
   }
 }

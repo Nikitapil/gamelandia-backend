@@ -119,9 +119,14 @@ export class QuizCommentsService {
       include: commentInclude
     });
 
-    return comments.map(
-      (comment) =>
-        new QuizCommentReturnDto({ quizCommentFromDb: comment, user })
-    );
+    const totalCount = await this.prismaService.quizComment.count();
+
+    return {
+      comments: comments.map(
+        (comment) =>
+          new QuizCommentReturnDto({ quizCommentFromDb: comment, user })
+      ),
+      totalCount
+    };
   }
 }
