@@ -116,7 +116,10 @@ export class QuizCommentsService {
       where,
       take: dto.limit,
       skip: offset,
-      include: commentInclude
+      include: commentInclude,
+      orderBy: {
+        createdAt: 'asc'
+      }
     });
 
     const totalCount = await this.prismaService.quizComment.count();
