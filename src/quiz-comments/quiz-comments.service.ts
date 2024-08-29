@@ -118,7 +118,7 @@ export class QuizCommentsService {
       skip: offset,
       include: commentInclude,
       orderBy: {
-        createdAt: 'asc'
+        createdAt: 'desc'
       }
     });
 
