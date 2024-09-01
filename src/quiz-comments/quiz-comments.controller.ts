@@ -79,7 +79,6 @@ export class QuizCommentsController {
     @Query() dto: GetQuizCommentsQueryDto,
     @User() user?: UserReturnDto
   ): Promise<ManyCommentsReturnDto> {
-    console.log(dto);
     return this.quizCommentsService.getComments({ dto, user });
   }
 }

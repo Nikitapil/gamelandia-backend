@@ -112,8 +112,6 @@ export class QuizCommentsService {
 
     const offset = calculateOffset(dto);
 
-    console.log(where);
-
     const comments = await this.prismaService.quizComment.findMany({
       where,
       take: dto.limit,
