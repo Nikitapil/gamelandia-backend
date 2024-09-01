@@ -13,7 +13,7 @@ export interface IGeneratedQuestion {
 
 export type TAllQuizesItem = Quiz & {
   favouritedBy: FavoritesQuizesOnUser[];
-  _count: { questions: number };
+  _count: { questions: number; comments: number };
   User?: { username: string } | null;
 };
 

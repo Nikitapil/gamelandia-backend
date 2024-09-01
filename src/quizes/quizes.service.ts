@@ -67,7 +67,8 @@ export class QuizesService {
       include: {
         _count: {
           select: {
-            questions: true
+            questions: true,
+            comments: true
           }
         },
         favouritedBy: {

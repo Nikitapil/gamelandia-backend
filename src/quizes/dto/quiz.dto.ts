@@ -34,6 +34,9 @@ export class QuizDto extends QuizActions {
   @ApiProperty({ description: 'count of quiz questions', type: Number })
   questionsCount: number;
 
+  @ApiProperty({ description: 'count of quiz comments', type: Number })
+  commentsCount: number;
+
   @ApiProperty({ description: 'author', type: String, nullable: true })
   author: string | null;
 
@@ -51,6 +54,7 @@ export class QuizDto extends QuizActions {
     this.userId = quiz.userId;
     this.isInFavourites = !!quiz.favouritedBy.length;
     this.questionsCount = quiz._count.questions;
+    this.commentsCount = quiz._count.comments;
     this.author = quiz.User?.username || null;
     this.getRating(ratings);
   }
