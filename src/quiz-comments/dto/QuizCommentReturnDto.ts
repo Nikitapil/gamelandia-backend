@@ -40,7 +40,7 @@ export class QuizCommentReturnDto {
   @ApiProperty({ description: 'comment  author name', type: String })
   authorName: string;
 
-  @ApiProperty({ description: 'comment replies count', type: String })
+  @ApiProperty({ description: 'comment replies count', type: Number })
   repliesCount: number;
 
   @ApiProperty({ description: 'can edit comment', type: Boolean })
