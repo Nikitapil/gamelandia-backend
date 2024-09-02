@@ -148,6 +148,6 @@ model QuizComment {
   userId Int
 
   replyToId String?
-  replyTo   QuizComment?  @relation("replies", fields: [replyToId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replyTo   QuizComment?  @relation("replies", fields: [replyToId], references: [id], onDelete: Cascade, onUpdate: Cascade)
   replies   QuizComment[] @relation("replies")
 }
