@@ -103,12 +103,9 @@ export class QuizCommentsService {
 
   async getComments({ dto, user }: GetQuizCommentsParams) {
     const where: Prisma.QuizCommentWhereInput = {
-      quizId: dto.quizId
+      quizId: dto.quizId,
+      replyToId: dto.replyToId ?? null
     };
-
-    if (dto.replyToId) {
-      where.replyToId = dto.replyToId;
-    }
 
     const offset = calculateOffset(dto);
 
