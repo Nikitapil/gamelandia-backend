@@ -37,7 +37,7 @@ export class QuizCommentsService {
         text: dto.text,
         quizId: dto.quizId,
         userId: user.id,
-        replyToId: dto.replayToId
+        replyToId: dto.replyToId
       },
       include: commentInclude
     });

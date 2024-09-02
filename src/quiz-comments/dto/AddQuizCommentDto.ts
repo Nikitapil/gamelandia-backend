@@ -10,7 +10,7 @@ export class AddQuizCommentDto {
   @ApiPropertyOptional({ description: 'parent comment id', type: String })
   @IsString()
   @IsOptional()
-  replayToId?: string;
+  replyToId?: string;
 
   @ApiProperty({ description: 'quizId', type: String })
   @IsString({ message: 'quizId should be a string' })
