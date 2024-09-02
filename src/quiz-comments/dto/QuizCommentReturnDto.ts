@@ -63,7 +63,7 @@ export class QuizCommentReturnDto {
     this.authorName = quizCommentFromDb.user.username;
     this.repliesCount = quizCommentFromDb._count.replies || 0;
 
-    this.canEdit = isUserIdsEquals;
+    this.canEdit = isUserIdsEquals && !this.repliesCount;
     this.canDelete = isUserIdsEquals || isCurrentUserAdmin;
   }
 }
