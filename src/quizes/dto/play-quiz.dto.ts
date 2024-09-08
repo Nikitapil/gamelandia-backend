@@ -31,6 +31,9 @@ export class PlayQuizDto {
   @ApiProperty({ description: 'quiz author', type: String, nullable: true })
   author: string | null;
 
+  @ApiProperty({ description: 'quiz author id', type: Number, nullable: true })
+  authorId: number | null;
+
   constructor(quiz: SingleQuizReturnDto) {
     this.id = quiz.id;
     this.isPrivate = quiz.isPrivate;
@@ -39,5 +42,6 @@ export class PlayQuizDto {
     this.isInFavourites = quiz.isInFavourites;
     this.isGenerated = quiz.isGenerated;
     this.author = quiz.author;
+    this.authorId = quiz.authorId;
   }
 }

@@ -41,6 +41,9 @@ export class SingleQuizReturnDto extends QuizActions {
   @ApiProperty({ description: 'quiz author', type: String, nullable: true })
   author: string | null;
 
+  @ApiProperty({ description: 'quiz author id', type: Number, nullable: true })
+  authorId: number | null;
+
   @ApiProperty({ description: 'quiz created date', type: Boolean })
   isPrivate: boolean;
 
@@ -81,5 +84,6 @@ export class SingleQuizReturnDto extends QuizActions {
     this.questions = quiz.questions;
     this.isGenerated = quiz.isGenerated;
     this.author = quiz.User?.username || null;
+    this.authorId = quiz.userId;
   }
 }
