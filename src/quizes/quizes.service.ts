@@ -202,6 +202,11 @@ export class QuizesService {
           where: {
             userId: user?.id || 0
           }
+        },
+        User: {
+          select: {
+            username: true
+          }
         }
       }
     });

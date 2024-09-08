@@ -5,7 +5,10 @@ import { QuizActions } from './security/quiz-actions';
 import { UserReturnDto } from '../../auth/dto/user-return.dto';
 
 interface ISingleQuizReturnDtoParams {
-  quiz: Quiz & { questions: QuizQuestion[] };
+  quiz: Quiz & {
+    questions: QuizQuestion[];
+    User?: { username?: string } | null;
+  };
   rating: number | null;
   isInFavourites: boolean;
   currentUser: UserReturnDto | undefined;
@@ -34,6 +37,9 @@ export class SingleQuizReturnDto extends QuizActions {
 
   @ApiProperty({ description: 'quiz name', type: String })
   name: string;
+
+  @ApiProperty({ description: 'quiz author', type: String, nullable: true })
+  author: string | null;
 
   @ApiProperty({ description: 'quiz created date', type: Boolean })
   isPrivate: boolean;
@@ -74,5 +80,6 @@ export class SingleQuizReturnDto extends QuizActions {
     this.userId = quiz.userId;
     this.questions = quiz.questions;
     this.isGenerated = quiz.isGenerated;
+    this.author = quiz.User?.username || null;
   }
 }
