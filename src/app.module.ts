@@ -6,6 +6,7 @@ import { UsersModule } from './users/users.module';
 import { MailingModule } from './mailing/mailing.module';
 import { QuizesModule } from './quizes/quizes.module';
 import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
+import { StarfallModule } from './starfall/starfall.module';
 
 @Module({
   imports: [
@@ -15,7 +16,8 @@ import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
     UsersModule,
     MailingModule,
     QuizesModule,
-    QuizCommentsModule
+    QuizCommentsModule,
+    StarfallModule
   ]
 })
 export class AppModule {}
