@@ -41,7 +41,7 @@ type CardType = 'ship' | 'base' | 'event' | 'hero';
 
 type FractionType = 'blobs' | 'trades' | 'empire' | 'techno' | 'none';
 
-interface Card {
+export interface Card {
   fraction: FractionType;
   type: CardType;
   name: string;
@@ -110,36 +110,5 @@ export const cards: Card[] = [
     money: 0,
     attack: 0,
     picture: ''
-  },
-  {
-    fraction: 'techno',
-    type: 'base',
-    name: 'Arcadia',
-    count: 1,
-    cost: 6,
-    abilities: [actionsCreators.scrap_card_from_hand()],
-    matchAbilities: [actionsCreators.scrap_card_from_pile()],
-    removeAbility: actionsCreators.plus_attack(6),
-    money: 0,
-    attack: 0,
-    picture: '',
-    health: 5
-  },
-  {
-    fraction: 'empire',
-    type: 'base',
-    name: 'Battle Star',
-    count: 1,
-    cost: 6,
-    abilities: [],
-    matchAbilities: [
-      actionsCreators.plus_attack(3),
-      actionsCreators.discard_opponent_card()
-    ],
-    removeAbility: null,
-    money: 0,
-    attack: 3,
-    picture: '',
-    health: 5
   }
 ];
