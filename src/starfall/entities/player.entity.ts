@@ -4,18 +4,20 @@ import { DeckEntity } from './deck.entity';
 
 interface PlayerEntityParams {
   hp: number;
-  id: number;
+  id: string;
   pileDeck: DeckEntity;
   deck: DeckEntity;
   hand: DeckEntity;
   bases: DeckEntity;
   heroes: DeckEntity;
+  money: number;
+  attack: number;
 }
 
 const HAND_SIZE = 5;
 
 export class PlayerEntity {
-  id: number;
+  id: string;
   hp: number;
   pileDeck: DeckEntity; // сброс
   deck: DeckEntity; // закрытая колода
@@ -33,6 +35,8 @@ export class PlayerEntity {
     this.hand = params.hand;
     this.bases = params.bases;
     this.heroes = params.heroes;
+    this.money = params.money;
+    this.attack = params.attack;
   }
 
   addHp(value: number) {
@@ -49,6 +53,8 @@ export class PlayerEntity {
     if (!card) {
       throw new Error('No card in hand with id ' + cardId);
     }
+
+    card.play();
 
     this.money += card.card.money;
     this.attack += card.card.attack;
@@ -73,5 +79,6 @@ export class PlayerEntity {
 
   buyCard(card: CardEntity) {
     this.pileDeck.addCards([card]);
+    this.money -= card.card.cost;
   }
 }

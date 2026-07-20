@@ -22,6 +22,15 @@ export class DeckEntity {
     return ejected;
   }
 
+  replaceCard(cardToBeReplaced: CardEntity, cardToReplaceWith: CardEntity) {
+    const index = this.cards.findIndex(
+      (card) => card.id === cardToBeReplaced.id
+    );
+    if (index >= 0) {
+      this.cards.splice(index, 1, cardToReplaceWith);
+    }
+  }
+
   ejectCardsByCount(count: number) {
     return this.cards.splice(0, count);
   }
