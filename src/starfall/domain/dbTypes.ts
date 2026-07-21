@@ -7,7 +7,10 @@ export interface CardFromDb {
     | 'player-pile-deck'
     | 'player-deck'
     | 'player-bases'
-    | 'player-heroes';
+    | 'player-heroes'
+    | 'trade-row'
+    | 'unused-deck'
+    | 'explorers';
 }
 
 export interface PlayerFromDb {

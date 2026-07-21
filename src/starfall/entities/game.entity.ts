@@ -5,7 +5,11 @@ import { cards as originalCards } from '../domain/constants';
 import { CardFromDb, PlayerFromDb } from '../domain/dbTypes';
 import { DeckEntity } from './deck.entity';
 
-interface GameEntityParams {}
+interface GameEntityParams {
+  players: PlayerFromDb[];
+  currentPlayerId: string;
+  gameCards: CardFromDb[];
+}
 
 const TRADE_ROW_SIZE = 5;
 
@@ -17,7 +21,21 @@ export class GameEntity {
   explorers: DeckEntity;
   // TODO обрабатывать ли тут информацию для пользователя который запрашивает данные или отделить эту логику на уровне сервиса???
 
-  constructor(params: GameEntityParams) {}
+  constructor(params: GameEntityParams) {
+    params.players.forEach((player) => {
+      const playerEntity = this.joinPlayer(player);
+      if (player.id === params.currentPlayerId) {
+        this.currentPlayer = playerEntity;
+      }
+    });
+    this.tradeRow = this.createDeckFromDbCards(params.gameCards, 'trade-row');
+    this.unusedDeck = this.createDeckFromDbCards(
+      params.gameCards,
+      'unused-deck'
+    );
+
+    this.explorers = this.createDeckFromDbCards(params.gameCards, 'explorers');
+  }
 
   get defencePlayer() {
     return this.players.find((player) => player.id !== this.currentPlayer.id);
@@ -38,50 +56,41 @@ export class GameEntity {
       throw new Error('Unexpected player');
     }
     // TODO prevent for bases
-    this.defencePlayer.hp -= this.currentPlayer.attack;
+    this.defencePlayer.reduceHp(this.currentPlayer.attack);
   }
 
   initNewGameData() {}
 
   joinPlayer(player: PlayerFromDb) {
-    const pileDeck = new DeckEntity(
-      this.createCardsListFromDb(
-        player.cards.filter((card) => card.deck === 'player-pile-deck')
-      )
+    const pileDeck = this.createDeckFromDbCards(
+      player.cards,
+      'player-pile-deck'
     );
-    const deck = new DeckEntity(
-      this.createCardsListFromDb(
-        player.cards.filter((card) => card.deck === 'player-deck')
-      )
-    );
-    const hand = new DeckEntity(
-      this.createCardsListFromDb(
-        player.cards.filter((card) => card.deck === 'player-hand')
-      )
-    );
-    const bases = new DeckEntity(
-      this.createCardsListFromDb(
-        player.cards.filter((card) => card.deck === 'player-bases')
-      )
-    );
-    const heroes = new DeckEntity([]);
+    const deck = this.createDeckFromDbCards(player.cards, 'player-deck');
+    const hand = this.createDeckFromDbCards(player.cards, 'player-hand');
+    const bases = this.createDeckFromDbCards(player.cards, 'player-bases');
+    const heroes = this.createDeckFromDbCards(player.cards, 'player-heroes');
+
     if (!player.cards.length) {
-      // TODO add started Cards
+      deck.updateCards(this.unusedDeck.ejectCardsByNameAndCount('Trooper', 2));
+      deck.updateCards(this.unusedDeck.ejectCardsByNameAndCount('Scout', 8));
     }
 
-    this.players.push(
-      new PlayerEntity({
-        id: player.id,
-        hp: player.hp,
-        pileDeck,
-        deck,
-        hand,
-        bases,
-        heroes,
-        money: player.money,
-        attack: player.attack
-      })
-    );
+    const playerEntity = new PlayerEntity({
+      id: player.id,
+      hp: player.hp,
+      pileDeck,
+      deck,
+      hand,
+      bases,
+      heroes,
+      money: player.money,
+      attack: player.attack
+    });
+
+    this.players.push(playerEntity);
+
+    return playerEntity;
   }
 
   createCardsListFromDb(cards: CardFromDb[]) {
@@ -116,6 +125,12 @@ export class GameEntity {
   initExplorers() {
     this.explorers = new DeckEntity(
       this.unusedDeck.ejectCardsByName('Explorer')
+    );
+  }
+
+  createDeckFromDbCards(cards: CardFromDb[], deckName: CardFromDb['deck']) {
+    return new DeckEntity(
+      this.createCardsListFromDb(cards.filter((card) => card.deck === deckName))
     );
   }
 }

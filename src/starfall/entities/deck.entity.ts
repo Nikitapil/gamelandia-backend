@@ -22,6 +22,21 @@ export class DeckEntity {
     return ejected;
   }
 
+  ejectCardsByNameAndCount(name: string, count: number) {
+    const updated: CardEntity[] = [];
+    const ejected: CardEntity[] = [];
+    this.cards.forEach((card) => {
+      if (card.card.name === name && ejected.length < count) {
+        ejected.push(card);
+      } else {
+        updated.push(card);
+      }
+    });
+
+    this.cards = updated;
+    return ejected;
+  }
+
   replaceCard(cardToBeReplaced: CardEntity, cardToReplaceWith: CardEntity) {
     const index = this.cards.findIndex(
       (card) => card.id === cardToBeReplaced.id
