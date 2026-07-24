@@ -1,15 +1,16 @@
-enum TCardAbilitiesNames {
+export enum TCardAbilitiesNames {
   SCRAP_CARD_FROM_HAND = 'scrap_card_from_hand', // можно уничтожить карту с руки
   SCRAP_CARD_FROM_PILE = 'scrap_card_from_pile', // можно  уничтожить карту из сброса
   PLUS_ATTACK = 'plus_attack', // добавляет атаку
-  DISCARD_OPPONENT_CARD = 'discard_opponent_card' // соперник должен сбросить карту
+  DISCARD_OPPONENT_CARD = 'discard_opponent_card', // соперник должен сбросить карту
+  GET_CARDS = 'get_cards' // соперник должен сбросить карту
 }
 
 enum TEventNames {
   HYPER_JUMP = 'hyper_jump'
 }
 
-type Action = { name: TCardAbilitiesNames; value?: number };
+export type Action = { name: TCardAbilitiesNames; value?: number };
 
 type Event = { name: TEventNames; description: string };
 
@@ -27,6 +28,10 @@ const actionsCreators: Record<TCardAbilitiesNames, (value?: number) => Action> =
     }),
     discard_opponent_card: () => ({
       name: TCardAbilitiesNames.DISCARD_OPPONENT_CARD
+    }),
+    get_cards: (value) => ({
+      name: TCardAbilitiesNames.GET_CARDS,
+      value
     })
   } as const;
 

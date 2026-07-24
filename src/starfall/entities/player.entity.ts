@@ -12,6 +12,7 @@ interface PlayerEntityParams {
   heroes: DeckEntity;
   money: number;
   attack: number;
+  discardCardsCount: number;
 }
 
 const HAND_SIZE = 5;
@@ -26,6 +27,7 @@ export class PlayerEntity {
   heroes: DeckEntity; // герои
   money = 0;
   attack = 0;
+  discardCardsCount = 0;
 
   constructor(params: PlayerEntityParams) {
     this.hp = params.hp;
@@ -37,6 +39,7 @@ export class PlayerEntity {
     this.heroes = params.heroes;
     this.money = params.money;
     this.attack = params.attack;
+    this.discardCardsCount = params.discardCardsCount;
   }
 
   addHp(value: number) {
@@ -66,15 +69,27 @@ export class PlayerEntity {
     });
 
     this.pileDeck.updateCards([...this.pileDeck.cards, ...this.hand.cards]);
-    this.hand.updateCards(this.deck.ejectCardsByCount(HAND_SIZE));
+    this.hand.updateCards([]);
 
-    if (this.hand.cards.length < HAND_SIZE && !this.deck.cards.length) {
+    this.getCardsFromDeck(HAND_SIZE);
+  }
+
+  getCardFromDeck() {
+    if (!this.deck.cards.length) {
       this.deck.updateCards(shuffleArray(this.pileDeck.cards));
       this.pileDeck.updateCards([]);
-      this.hand.addCards(
-        this.deck.ejectCardsByCount(HAND_SIZE - this.deck.cards.length)
-      );
     }
+    this.hand.addCards(this.deck.ejectCardsByCount(1));
+  }
+
+  getCardsFromDeck(count: number) {
+    for (let i = 0; i < count; i++) {
+      this.getCardFromDeck();
+    }
+  }
+
+  addAttack(value: number) {
+    this.attack += value;
   }
 
   buyCard(card: CardEntity) {

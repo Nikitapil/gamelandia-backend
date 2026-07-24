@@ -19,4 +19,5 @@ export interface PlayerFromDb {
   money: number;
   attack: number;
   hp: number;
+  discardCardsCount: number;
 }

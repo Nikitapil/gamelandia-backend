@@ -1,7 +1,10 @@
 import { PlayerEntity } from './player.entity';
 import { CardEntity } from './card.entity';
 import { shuffleArray } from '../../shared/helpers/arrays.helpers';
-import { cards as originalCards } from '../domain/constants';
+import {
+  cards as originalCards,
+  TCardAbilitiesNames
+} from '../domain/constants';
 import { CardFromDb, PlayerFromDb } from '../domain/dbTypes';
 import { DeckEntity } from './deck.entity';
 
@@ -22,19 +25,19 @@ export class GameEntity {
   // TODO обрабатывать ли тут информацию для пользователя который запрашивает данные или отделить эту логику на уровне сервиса???
 
   constructor(params: GameEntityParams) {
+    this.tradeRow = this.createDeckFromDbCards(params.gameCards, 'trade-row');
+    this.unusedDeck = this.createDeckFromDbCards(
+      params.gameCards,
+      'unused-deck'
+    );
+    this.explorers = this.createDeckFromDbCards(params.gameCards, 'explorers');
+
     params.players.forEach((player) => {
       const playerEntity = this.joinPlayer(player);
       if (player.id === params.currentPlayerId) {
         this.currentPlayer = playerEntity;
       }
     });
-    this.tradeRow = this.createDeckFromDbCards(params.gameCards, 'trade-row');
-    this.unusedDeck = this.createDeckFromDbCards(
-      params.gameCards,
-      'unused-deck'
-    );
-
-    this.explorers = this.createDeckFromDbCards(params.gameCards, 'explorers');
   }
 
   get defencePlayer() {
@@ -49,7 +52,12 @@ export class GameEntity {
     }
   }
 
-  useCardAbility() {}
+  useCardAbility(card: CardEntity, name: TCardAbilitiesNames) {
+    const ability = card.useAbility(name);
+    if (!ability) {
+      throw new Error('Unable to get a card ability');
+    }
+  }
 
   attackPlayer() {
     if (!this.defencePlayer) {
@@ -58,8 +66,6 @@ export class GameEntity {
     // TODO prevent for bases
     this.defencePlayer.reduceHp(this.currentPlayer.attack);
   }
-
-  initNewGameData() {}
 
   joinPlayer(player: PlayerFromDb) {
     const pileDeck = this.createDeckFromDbCards(
@@ -85,7 +91,8 @@ export class GameEntity {
       bases,
       heroes,
       money: player.money,
-      attack: player.attack
+      attack: player.attack,
+      discardCardsCount: player.discardCardsCount
     });
 
     this.players.push(playerEntity);
@@ -113,7 +120,6 @@ export class GameEntity {
     );
     this.initTradeRow();
     this.initExplorers();
-    // TODO Continue here
   }
 
   initTradeRow() {

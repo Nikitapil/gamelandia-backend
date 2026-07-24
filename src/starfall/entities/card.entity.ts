@@ -1,4 +1,4 @@
-import { Card } from '../domain/constants';
+import { Card, TCardAbilitiesNames } from '../domain/constants';
 
 interface CardEntityParams {
   card: Card;
@@ -17,7 +17,9 @@ export class CardEntity {
     this.id = params.id;
   }
 
-  useAbility() {}
+  useAbility(name: TCardAbilitiesNames) {
+    return this.card.abilities.find((ability) => ability.name === name);
+  }
 
   useMatchAbility() {}
 
