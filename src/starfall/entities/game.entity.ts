@@ -53,10 +53,7 @@ export class GameEntity {
   }
 
   useCardAbility(card: CardEntity, name: TCardAbilitiesNames) {
-    const ability = card.useAbility(name);
-    if (!ability) {
-      throw new Error('Unable to get a card ability');
-    }
+    card.useAbility(name, this);
   }
 
   attackPlayer() {
@@ -109,7 +106,8 @@ export class GameEntity {
       return new CardEntity({
         card: original,
         id: card.id,
-        isPlayed: card.isPlayed
+        isPlayed: card.isPlayed,
+        usedAbilities: []
       });
     });
   }
