@@ -17,20 +17,31 @@ interface GameEntityParams {
 const TRADE_ROW_SIZE = 5;
 
 export class GameEntity {
-  players: PlayerEntity[];
+  players: PlayerEntity[] = [];
   currentPlayer: PlayerEntity;
   tradeRow: DeckEntity;
   unusedDeck: DeckEntity; // игровая колода откуда добавляются новые карты
   explorers: DeckEntity;
+  starterCards: DeckEntity;
   // TODO обрабатывать ли тут информацию для пользователя который запрашивает данные или отделить эту логику на уровне сервиса???
 
   constructor(params: GameEntityParams) {
-    this.tradeRow = this.createDeckFromDbCards(params.gameCards, 'trade-row');
-    this.unusedDeck = this.createDeckFromDbCards(
+    const unusedCards = this.createDeckFromDbCards(
       params.gameCards,
       'unused-deck'
+    ).cards;
+
+    this.tradeRow = this.createDeckFromDbCards(params.gameCards, 'trade-row');
+    this.unusedDeck = new DeckEntity(
+      unusedCards.filter((card) => card.card.deck === 'trade')
     );
-    this.explorers = this.createDeckFromDbCards(params.gameCards, 'explorers');
+    this.explorers = new DeckEntity([
+      ...this.createDeckFromDbCards(params.gameCards, 'explorers').cards,
+      ...unusedCards.filter((card) => card.card.deck === 'explorer')
+    ]);
+    this.starterCards = new DeckEntity(
+      unusedCards.filter((card) => card.card.deck === 'starter')
+    );
 
     params.players.forEach((player) => {
       const playerEntity = this.joinPlayer(player);
@@ -75,8 +86,8 @@ export class GameEntity {
     const heroes = this.createDeckFromDbCards(player.cards, 'player-heroes');
 
     if (!player.cards.length) {
-      deck.updateCards(this.unusedDeck.ejectCardsByNameAndCount('Trooper', 2));
-      deck.updateCards(this.unusedDeck.ejectCardsByNameAndCount('Scout', 8));
+      deck.addCards(this.starterCards.ejectCardsByNameAndCount('Trooper', 2));
+      deck.addCards(this.starterCards.ejectCardsByNameAndCount('Scout', 8));
     }
 
     const playerEntity = new PlayerEntity({
@@ -113,22 +124,24 @@ export class GameEntity {
   }
 
   initNewGame(initialCards: CardFromDb[]) {
-    this.unusedDeck = new DeckEntity(
-      shuffleArray(this.createCardsListFromDb(initialCards))
+    const cards = this.createCardsListFromDb(initialCards);
+
+    this.explorers = new DeckEntity(
+      cards.filter((card) => card.card.deck === 'explorer')
     );
+    this.starterCards = new DeckEntity(
+      cards.filter((card) => card.card.deck === 'starter')
+    );
+    this.unusedDeck = new DeckEntity(
+      shuffleArray(cards.filter((card) => card.card.deck === 'trade'))
+    );
+
     this.initTradeRow();
-    this.initExplorers();
   }
 
   initTradeRow() {
     this.tradeRow = new DeckEntity(
       this.unusedDeck.ejectCardsByCount(TRADE_ROW_SIZE)
-    );
-  }
-
-  initExplorers() {
-    this.explorers = new DeckEntity(
-      this.unusedDeck.ejectCardsByName('Explorer')
     );
   }
 

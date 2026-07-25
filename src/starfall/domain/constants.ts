@@ -82,9 +82,12 @@ export type Action =
 
 type CardType = 'ship' | 'base';
 
+export type CardDeckType = 'trade' | 'explorer' | 'starter';
+
 export type FractionType = 'blobs' | 'trades' | 'empire' | 'techno' | 'none';
 
 export interface Card {
+  deck: CardDeckType;
   fraction: FractionType;
   type: CardType;
   name: string;
@@ -149,6 +152,7 @@ type CardData = Pick<Card, 'fraction' | 'type' | 'name' | 'count' | 'cost'> &
     Pick<
       Card,
       | 'abilities'
+      | 'deck'
       | 'matchAbilities'
       | 'removeAbility'
       | 'money'
@@ -159,6 +163,7 @@ type CardData = Pick<Card, 'fraction' | 'type' | 'name' | 'count' | 'cost'> &
   >;
 
 const defineCard = (data: CardData): Card => ({
+  deck: 'trade',
   abilities: [],
   matchAbilities: [],
   removeAbility: null,
@@ -175,6 +180,7 @@ export const cards: Card[] = [
     fraction: 'none',
     type: 'ship',
     name: 'Explorer',
+    deck: 'explorer',
     count: 10,
     cost: 2,
     money: 2,
@@ -184,6 +190,7 @@ export const cards: Card[] = [
     fraction: 'none',
     type: 'ship',
     name: 'Trooper',
+    deck: 'starter',
     count: 4,
     cost: 0,
     attack: 1
@@ -192,6 +199,7 @@ export const cards: Card[] = [
     fraction: 'none',
     type: 'ship',
     name: 'Scout',
+    deck: 'starter',
     count: 16,
     cost: 0,
     money: 1
