@@ -66,7 +66,12 @@ export class PlayerEntity {
 
     card.play();
 
-    this.currentPlayedCards.addCards([card]);
+    if (card.card.type === 'base') {
+      this.bases.addCards([card]);
+    } else {
+      this.currentPlayedCards.addCards([card]);
+    }
+
     this.hand.ejectById(card.id);
 
     this.money += card.card.money;
@@ -97,6 +102,13 @@ export class PlayerEntity {
     this.updateHand();
   }
 
+  startTurn() {
+    this.bases.cards.forEach((card) => {
+      this.addAttack(card.card.attack);
+      this.money += card.card.money;
+    });
+  }
+
   getCardFromDeck() {
     if (!this.deck.cards.length) {
       this.deck.updateCards(shuffleArray(this.pileDeck.cards));
@@ -115,7 +127,14 @@ export class PlayerEntity {
     this.attack += value;
   }
 
+  canBuyCard(card: CardEntity) {
+    return this.money >= card.card.cost;
+  }
+
   buyCard(card: CardEntity) {
+    if (!this.canBuyCard(card)) {
+      throw new Error('Not enough money to buy this card');
+    }
     this.pileDeck.addCards([card]);
     this.money -= card.card.cost;
   }
