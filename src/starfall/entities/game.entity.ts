@@ -56,11 +56,25 @@ export class GameEntity {
   }
 
   buyCard(cardId: string) {
-    const card = this.tradeRow.getCardById(cardId);
+    let card = this.tradeRow.getCardById(cardId);
     if (card) {
       this.currentPlayer.buyCard(card);
-      this.tradeRow.replaceCard(card, this.unusedDeck.ejectCardsByCount(1)[0]);
+      const nextCardForTradeRow = this.unusedDeck.ejectCardsByCount(1)[0];
+      if (nextCardForTradeRow) {
+        this.tradeRow.replaceCard(card, nextCardForTradeRow);
+      } else {
+        this.tradeRow.ejectById(cardId);
+      }
+      return;
     }
+    card = this.explorers.getCardById(cardId);
+
+    if (card) {
+      this.currentPlayer.buyCard(card);
+      this.explorers.ejectById(cardId);
+      return;
+    }
+    throw new Error('Card is unavailabale for trade');
   }
 
   useCardAbility(card: CardEntity, name: TCardAbilitiesNames) {
