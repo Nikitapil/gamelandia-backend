@@ -84,6 +84,10 @@ export class GameEntity {
     const hand = this.createDeckFromDbCards(player.cards, 'player-hand');
     const bases = this.createDeckFromDbCards(player.cards, 'player-bases');
     const heroes = this.createDeckFromDbCards(player.cards, 'player-heroes');
+    const currentPlayedCards = this.createDeckFromDbCards(
+      player.cards,
+      'currently-played'
+    );
 
     if (!player.cards.length) {
       deck.addCards(this.starterCards.ejectCardsByNameAndCount('Trooper', 2));
@@ -100,7 +104,8 @@ export class GameEntity {
       heroes,
       money: player.money,
       attack: player.attack,
-      discardCardsCount: player.discardCardsCount
+      discardCardsCount: player.discardCardsCount,
+      currentPlayedCards
     });
 
     this.players.push(playerEntity);

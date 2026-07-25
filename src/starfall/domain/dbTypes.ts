@@ -10,7 +10,8 @@ export interface CardFromDb {
     | 'player-heroes'
     | 'trade-row'
     | 'unused-deck'
-    | 'explorers';
+    | 'explorers'
+    | 'currently-played';
 }
 
 export interface PlayerFromDb {

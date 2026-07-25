@@ -7,6 +7,10 @@ export class DeckEntity {
     this.cards = cards;
   }
 
+  ejectById(id: string) {
+    this.cards = this.cards.filter((card) => card.id !== id);
+  }
+
   ejectCardsByName(name: string) {
     const updated: CardEntity[] = [];
     const ejected: CardEntity[] = [];

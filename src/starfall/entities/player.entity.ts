@@ -10,6 +10,7 @@ interface PlayerEntityParams {
   hand: DeckEntity;
   bases: DeckEntity;
   heroes: DeckEntity;
+  currentPlayedCards: DeckEntity;
   money: number;
   attack: number;
   discardCardsCount: number;
@@ -25,6 +26,7 @@ export class PlayerEntity {
   hand: DeckEntity; // текущая рука
   bases: DeckEntity; // базы
   heroes: DeckEntity; // герои
+  currentPlayedCards: DeckEntity; // текущие разыгранные карты
   money = 0;
   attack = 0;
   discardCardsCount = 0;
@@ -40,6 +42,7 @@ export class PlayerEntity {
     this.money = params.money;
     this.attack = params.attack;
     this.discardCardsCount = params.discardCardsCount;
+    this.currentPlayedCards = params.currentPlayedCards;
   }
 
   addHp(value: number) {
@@ -57,10 +60,25 @@ export class PlayerEntity {
       throw new Error('No card in hand with id ' + cardId);
     }
 
+    if (card.isPlayed) {
+      throw new Error('Played hand with id ' + cardId);
+    }
+
     card.play();
+
+    this.currentPlayedCards.addCards([card]);
+    this.hand.ejectById(card.id);
 
     this.money += card.card.money;
     this.attack += card.card.attack;
+  }
+
+  resetPlayedCards() {
+    this.currentPlayedCards.cards.forEach((card) => {
+      card.resetPlay();
+    });
+    this.pileDeck.addCards(this.currentPlayedCards.cards);
+    this.currentPlayedCards = new DeckEntity([]);
   }
 
   updateHand() {
@@ -72,6 +90,11 @@ export class PlayerEntity {
     this.hand.updateCards([]);
 
     this.getCardsFromDeck(HAND_SIZE);
+  }
+
+  finishTurn() {
+    this.resetPlayedCards();
+    this.updateHand();
   }
 
   getCardFromDeck() {
