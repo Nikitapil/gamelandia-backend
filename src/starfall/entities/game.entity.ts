@@ -5,13 +5,14 @@ import {
   cards as originalCards,
   TCardAbilitiesNames
 } from '../domain/constants';
-import { CardFromDb, PlayerFromDb } from '../domain/dbTypes';
+import { CardFromDb, PlayerFromDb, GameStatus } from '../domain/dbTypes';
 import { DeckEntity } from './deck.entity';
 
 interface GameEntityParams {
   players: PlayerFromDb[];
   currentPlayerId: string;
   gameCards: CardFromDb[];
+  status: GameStatus;
 }
 
 const TRADE_ROW_SIZE = 5;
@@ -23,9 +24,11 @@ export class GameEntity {
   unusedDeck: DeckEntity; // игровая колода откуда добавляются новые карты
   explorers: DeckEntity;
   starterCards: DeckEntity;
+  status: GameStatus;
   // TODO обрабатывать ли тут информацию для пользователя который запрашивает данные или отделить эту логику на уровне сервиса???
 
   constructor(params: GameEntityParams) {
+    this.status = params.status;
     const unusedCards = this.createDeckFromDbCards(
       params.gameCards,
       'unused-deck'
@@ -49,6 +52,10 @@ export class GameEntity {
         this.currentPlayer = playerEntity;
       }
     });
+  }
+
+  get winner() {
+    return this.players.find((player) => player.isWinner);
   }
 
   get defencePlayer() {
@@ -119,7 +126,8 @@ export class GameEntity {
       money: player.money,
       attack: player.attack,
       discardCardsCount: player.discardCardsCount,
-      currentPlayedCards
+      currentPlayedCards,
+      isWinner: player.isWinner
     });
 
     this.players.push(playerEntity);
@@ -156,6 +164,31 @@ export class GameEntity {
     );
 
     this.initTradeRow();
+    this.status = 'waiting';
+  }
+
+  changeTurn() {
+    if (this.defencePlayer && this.currentPlayer) {
+      this.currentPlayer.finishTurn();
+      this.currentPlayer = this.defencePlayer;
+    }
+  }
+
+  startGame() {
+    if (
+      this.status === 'waiting' &&
+      this.players.length === 2 &&
+      this.currentPlayer
+    ) {
+      this.status = 'active';
+      this.currentPlayer = this.players[0];
+    }
+  }
+
+  finishGame() {
+    if (this.status === 'active') {
+      this.status = 'finished';
+    }
   }
 
   initTradeRow() {

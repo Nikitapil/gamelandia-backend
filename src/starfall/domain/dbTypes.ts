@@ -21,4 +21,7 @@ export interface PlayerFromDb {
   attack: number;
   hp: number;
   discardCardsCount: number;
+  isWinner: boolean;
 }
+
+export type GameStatus = 'waiting' | 'active' | 'finished';

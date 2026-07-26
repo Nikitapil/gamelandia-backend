@@ -14,6 +14,7 @@ interface PlayerEntityParams {
   money: number;
   attack: number;
   discardCardsCount: number;
+  isWinner: boolean;
 }
 
 const HAND_SIZE = 5;
@@ -30,6 +31,7 @@ export class PlayerEntity {
   money = 0;
   attack = 0;
   discardCardsCount = 0;
+  isWinner = false;
 
   constructor(params: PlayerEntityParams) {
     this.hp = params.hp;
@@ -43,6 +45,7 @@ export class PlayerEntity {
     this.attack = params.attack;
     this.discardCardsCount = params.discardCardsCount;
     this.currentPlayedCards = params.currentPlayedCards;
+    this.isWinner = params.isWinner;
   }
 
   addHp(value: number) {
