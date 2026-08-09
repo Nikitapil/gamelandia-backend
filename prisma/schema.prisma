@@ -2,6 +2,10 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator json {
+  provider = "prisma-json-types-generator"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -23,8 +27,9 @@ model User {
   role       UserRole @default(User)
   restoreKey String?  @unique
 
-  scores    Score[]
-  winsCount WinCount[]
+  scores        Score[]
+  winsCount     WinCount[]
+  starfallGames StarfallGame[] @relation("StarfallGamePlayers")
 
   quizes          Quiz[]
   quizesRatings   QuizRating[]
@@ -43,6 +48,18 @@ model Game {
   name      String     @id
   scores    Score[]
   winsCount WinCount[]
+}
+
+model StarfallGame {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  version   Int      @default(0)
+  /// [StarfallGameState]
+  state     Json
+  players   User[]   @relation("StarfallGamePlayers")
+
+  @@unique([id, version])
 }
 
 model Score {

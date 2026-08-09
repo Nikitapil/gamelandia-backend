@@ -1,10 +1,25 @@
 import { CardEntity } from './card.entity';
-import { shuffleArray } from '../../shared/helpers/arrays.helpers';
 import { DeckEntity } from './deck.entity';
 
-interface PlayerEntityParams {
+export interface PlayerEntityParams {
   hp: number;
   id: string;
+  pileDeck?: DeckEntity;
+  deck?: DeckEntity;
+  hand?: DeckEntity;
+  bases?: DeckEntity;
+  heroes?: DeckEntity;
+  currentPlayedCards?: DeckEntity;
+  money?: number;
+  attack?: number;
+  discardCardsCount?: number;
+  isWinner?: boolean;
+  nextShipToTop?: boolean;
+}
+
+export class PlayerEntity {
+  readonly id: string;
+  hp: number;
   pileDeck: DeckEntity;
   deck: DeckEntity;
   hand: DeckEntity;
@@ -15,130 +30,130 @@ interface PlayerEntityParams {
   attack: number;
   discardCardsCount: number;
   isWinner: boolean;
-}
-
-const HAND_SIZE = 5;
-
-export class PlayerEntity {
-  id: string;
-  hp: number;
-  pileDeck: DeckEntity; // сброс
-  deck: DeckEntity; // закрытая колода
-  hand: DeckEntity; // текущая рука
-  bases: DeckEntity; // базы
-  heroes: DeckEntity; // герои
-  currentPlayedCards: DeckEntity; // текущие разыгранные карты
-  money = 0;
-  attack = 0;
-  discardCardsCount = 0;
-  isWinner = false;
+  nextShipToTop: boolean;
 
   constructor(params: PlayerEntityParams) {
     this.hp = params.hp;
     this.id = params.id;
-    this.pileDeck = params.pileDeck;
-    this.deck = params.deck;
-    this.hand = params.hand;
-    this.bases = params.bases;
-    this.heroes = params.heroes;
-    this.money = params.money;
-    this.attack = params.attack;
-    this.discardCardsCount = params.discardCardsCount;
-    this.currentPlayedCards = params.currentPlayedCards;
-    this.isWinner = params.isWinner;
+    this.pileDeck = params.pileDeck ?? new DeckEntity([], 'player-pile-deck');
+    this.deck = params.deck ?? new DeckEntity([], 'player-deck');
+    this.hand = params.hand ?? new DeckEntity([], 'player-hand');
+    this.bases = params.bases ?? new DeckEntity([], 'player-bases');
+    this.heroes = params.heroes ?? new DeckEntity();
+    this.currentPlayedCards =
+      params.currentPlayedCards ?? new DeckEntity([], 'currently-played');
+    this.money = Math.max(0, params.money ?? 0);
+    this.attack = Math.max(0, params.attack ?? 0);
+    this.discardCardsCount = Math.max(0, params.discardCardsCount ?? 0);
+    this.isWinner = params.isWinner ?? false;
+    this.nextShipToTop = params.nextShipToTop ?? false;
+  }
+
+  get cardsInPlay() {
+    return [...this.bases.cards, ...this.currentPlayedCards.cards];
   }
 
   addHp(value: number) {
-    this.hp += value;
+    this.hp = this.hp + value;
   }
 
   reduceHp(value: number) {
-    this.hp -= value;
+    if (value < 0) {
+      throw new Error('Damage cannot be negative');
+    }
+    this.hp = this.hp - value;
   }
 
-  playCard(cardId: string) {
-    const card = this.hand.getCardById(cardId);
+  takeCardFromHand(cardId: string) {
+    return this.hand.removeById(cardId);
+  }
 
-    if (!card) {
-      throw new Error('No card in hand with id ' + cardId);
-    }
-
-    if (card.isPlayed) {
-      throw new Error('Played hand with id ' + cardId);
-    }
-
+  putCardInPlay(card: CardEntity) {
     card.play();
-
     if (card.card.type === 'base') {
-      this.bases.addCards([card]);
+      this.bases.add(card);
     } else {
-      this.currentPlayedCards.addCards([card]);
+      this.currentPlayedCards.add(card);
     }
-
-    this.hand.ejectById(card.id);
-
     this.money += card.card.money;
     this.attack += card.card.attack;
   }
 
   resetPlayedCards() {
-    this.currentPlayedCards.cards.forEach((card) => {
-      card.resetPlay();
-    });
-    this.pileDeck.addCards(this.currentPlayedCards.cards);
-    this.currentPlayedCards = new DeckEntity([]);
+    const ships = this.currentPlayedCards.clear();
+    ships.forEach((card) => card.leavePlay());
+    this.pileDeck.addMany(ships);
   }
 
-  updateHand() {
-    this.hand.cards.forEach((card) => {
-      card.resetPlay();
-    });
-
-    this.pileDeck.updateCards([...this.pileDeck.cards, ...this.hand.cards]);
-    this.hand.updateCards([]);
-
-    this.getCardsFromDeck(HAND_SIZE);
+  discardHand() {
+    const cards = this.hand.clear();
+    cards.forEach((card) => card.leavePlay());
+    this.pileDeck.addMany(cards);
   }
 
   finishTurn() {
     this.resetPlayedCards();
-    this.updateHand();
+    this.discardHand();
+    this.money = 0;
+    this.attack = 0;
+    this.nextShipToTop = false;
   }
 
   startTurn() {
     this.bases.cards.forEach((card) => {
-      this.addAttack(card.card.attack);
+      card.resetForTurn();
+      this.attack += card.card.attack;
       this.money += card.card.money;
     });
   }
 
   getCardFromDeck() {
-    if (!this.deck.cards.length) {
-      this.deck.updateCards(shuffleArray(this.pileDeck.cards));
-      this.pileDeck.updateCards([]);
+    if (!this.deck.size && this.pileDeck.size) {
+      const cards = this.pileDeck.clear();
+      this.deck.replaceAll(cards);
+      this.deck.shuffle();
     }
-    this.hand.addCards(this.deck.ejectCardsByCount(1));
+    const card = this.deck.takeTop(1)[0];
+    if (card) {
+      this.hand.add(card);
+    }
+    return card;
   }
 
   getCardsFromDeck(count: number) {
-    for (let i = 0; i < count; i++) {
-      this.getCardFromDeck();
+    const drawn: CardEntity[] = [];
+    for (let index = 0; index < count; index++) {
+      const card = this.getCardFromDeck();
+      if (!card) break;
+      drawn.push(card);
     }
+    return drawn;
   }
 
   addAttack(value: number) {
-    this.attack += value;
+    this.attack = Math.max(0, this.attack + value);
+  }
+
+  addMoney(value: number) {
+    this.money = Math.max(0, this.money + value);
   }
 
   canBuyCard(card: CardEntity) {
     return this.money >= card.card.cost;
   }
 
-  buyCard(card: CardEntity) {
+  payFor(card: CardEntity) {
     if (!this.canBuyCard(card)) {
-      throw new Error('Not enough money to buy this card');
+      throw new Error('Not enough trade to acquire this card');
     }
-    this.pileDeck.addCards([card]);
     this.money -= card.card.cost;
+  }
+
+  acquire(card: CardEntity, destination: 'discard' | 'top' = 'discard') {
+    if (destination === 'top') {
+      this.deck.putOnTop(card);
+    } else {
+      this.pileDeck.add(card);
+    }
   }
 }

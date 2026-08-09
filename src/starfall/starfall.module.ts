@@ -4,6 +4,7 @@ import { StarfallController } from './starfall.controller';
 
 @Module({
   providers: [StarfallService],
-  controllers: [StarfallController]
+  controllers: [StarfallController],
+  exports: [StarfallService]
 })
 export class StarfallModule {}

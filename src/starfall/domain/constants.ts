@@ -14,7 +14,6 @@ export enum TCardAbilitiesNames {
   ACQUIRE_SHIP_FOR_FREE_ON_TOP = 'acquire_ship_for_free_on_top', // бесплатно купить корабль и положить наверх колоды
   COPY_SHIP = 'copy_ship', // скопировать другой разыгранный корабль
   ALL_FACTIONS_ALLY = 'all_factions_ally', // считать карту союзником для всех фракций
-  ATTACK_PER_SHIP = 'attack_per_ship', // получать очко боя за каждый разыгранный корабль
   DRAW_PER_FACTION_CARD = 'draw_per_faction_card', // брать карты за разыгранные карты указанной фракции
   SEQUENCE = 'sequence', // последовательно выполнить несколько действий
   CHOOSE_ONE = 'choose_one', // выбрать один из нескольких эффектов
@@ -41,8 +40,7 @@ type SimpleAction = {
     | TCardAbilitiesNames.PUT_NEXT_SHIP_ON_TOP
     | TCardAbilitiesNames.ACQUIRE_SHIP_FOR_FREE_ON_TOP
     | TCardAbilitiesNames.COPY_SHIP
-    | TCardAbilitiesNames.ALL_FACTIONS_ALLY
-    | TCardAbilitiesNames.ATTACK_PER_SHIP;
+    | TCardAbilitiesNames.ALL_FACTIONS_ALLY;
 };
 
 export type Action =
@@ -86,6 +84,13 @@ export type CardDeckType = 'trade' | 'explorer' | 'starter';
 
 export type FractionType = 'blobs' | 'trades' | 'empire' | 'techno' | 'none';
 
+export type CardTrigger = 'ship_played';
+
+export interface PersistentAbility {
+  trigger: CardTrigger;
+  action: Action;
+}
+
 export interface Card {
   deck: CardDeckType;
   fraction: FractionType;
@@ -96,6 +101,7 @@ export interface Card {
   abilities: Action[];
   matchAbilities: Action[];
   removeAbility: Action | null;
+  persistentAbilities: PersistentAbility[];
   money: number;
   attack: number;
   picture: string;
@@ -155,6 +161,7 @@ type CardData = Pick<Card, 'fraction' | 'type' | 'name' | 'count' | 'cost'> &
       | 'deck'
       | 'matchAbilities'
       | 'removeAbility'
+      | 'persistentAbilities'
       | 'money'
       | 'attack'
       | 'health'
@@ -167,6 +174,7 @@ const defineCard = (data: CardData): Card => ({
   abilities: [],
   matchAbilities: [],
   removeAbility: null,
+  persistentAbilities: [],
   money: 0,
   attack: 0,
   picture: '',
@@ -372,8 +380,9 @@ export const cards: Card[] = [
     health: 6,
     outpost: true,
     abilities: [
-      action.draw(),
-      { name: TCardAbilitiesNames.SCRAP_CARD_FROM_HAND }
+      action.sequence(action.draw(), {
+        name: TCardAbilitiesNames.SCRAP_CARD_FROM_HAND
+      })
     ]
   }),
   defineCard({
@@ -483,7 +492,12 @@ export const cards: Card[] = [
     count: 1,
     cost: 8,
     health: 8,
-    abilities: [{ name: TCardAbilitiesNames.ATTACK_PER_SHIP }]
+    persistentAbilities: [
+      {
+        trigger: 'ship_played',
+        action: action.attack(1)
+      }
+    ]
   }),
   defineCard({
     fraction: 'empire',

@@ -1,68 +1,110 @@
+import { shuffleArray } from '../../shared/helpers/arrays.helpers';
+import { CardZone } from '../domain/dbTypes';
 import { CardEntity } from './card.entity';
 
 export class DeckEntity {
   cards: CardEntity[];
 
-  constructor(cards: CardEntity[]) {
-    this.cards = cards;
+  constructor(cards: CardEntity[] = [], readonly zone?: CardZone) {
+    this.cards = [...cards];
+    this.cards.forEach((card) => this.assignZone(card));
   }
 
-  ejectById(id: string) {
-    this.cards = this.cards.filter((card) => card.id !== id);
+  get size() {
+    return this.cards.length;
   }
 
-  ejectCardsByName(name: string) {
-    const updated: CardEntity[] = [];
-    const ejected: CardEntity[] = [];
-    this.cards.forEach((card) => {
-      if (card.card.name === name) {
-        ejected.push(card);
-      } else {
-        updated.push(card);
-      }
-    });
-
-    this.cards = updated;
-    return ejected;
-  }
-
-  ejectCardsByNameAndCount(name: string, count: number) {
-    const updated: CardEntity[] = [];
-    const ejected: CardEntity[] = [];
-    this.cards.forEach((card) => {
-      if (card.card.name === name && ejected.length < count) {
-        ejected.push(card);
-      } else {
-        updated.push(card);
-      }
-    });
-
-    this.cards = updated;
-    return ejected;
-  }
-
-  replaceCard(cardToBeReplaced: CardEntity, cardToReplaceWith: CardEntity) {
-    const index = this.cards.findIndex(
-      (card) => card.id === cardToBeReplaced.id
-    );
-    if (index >= 0) {
-      this.cards.splice(index, 1, cardToReplaceWith);
-    }
-  }
-
-  ejectCardsByCount(count: number) {
-    return this.cards.splice(0, count);
-  }
-
-  updateCards(cards: CardEntity[]) {
-    this.cards = cards;
+  has(id: string) {
+    return this.cards.some((card) => card.id === id);
   }
 
   getCardById(id: string) {
     return this.cards.find((card) => card.id === id);
   }
 
-  addCards(cards: CardEntity[]) {
-    this.cards.push(...cards);
+  requireCardById(id: string) {
+    const card = this.getCardById(id);
+    if (!card) {
+      throw new Error(`Card ${id} was not found in this zone`);
+    }
+    return card;
+  }
+
+  removeById(id: string) {
+    const index = this.cards.findIndex((card) => card.id === id);
+    if (index < 0) {
+      throw new Error(`Card ${id} was not found in this zone`);
+    }
+    return this.cards.splice(index, 1)[0];
+  }
+
+  tryRemoveById(id: string) {
+    try {
+      const removed = this.removeById(id);
+      return removed;
+    } catch (e) {
+      return undefined;
+    }
+  }
+
+  takeTop(count = 1) {
+    return this.cards.splice(0, Math.max(0, count));
+  }
+
+  putOnTop(card: CardEntity) {
+    this.assignZone(card);
+    this.cards.unshift(card);
+  }
+
+  add(card: CardEntity) {
+    this.assignZone(card);
+    this.cards.push(card);
+  }
+
+  addMany(cards: CardEntity[]) {
+    cards.forEach((card) => this.add(card));
+  }
+
+  replace(cardId: string, replacement?: CardEntity) {
+    const index = this.cards.findIndex((card) => card.id === cardId);
+    if (index < 0) {
+      throw new Error(`Card ${cardId} was not found in this zone`);
+    }
+    if (replacement) this.assignZone(replacement);
+    const [removed] = this.cards.splice(
+      index,
+      1,
+      ...(replacement ? [replacement] : [])
+    );
+    return removed;
+  }
+
+  replaceAll(cards: CardEntity[]) {
+    this.cards = [...cards];
+    this.cards.forEach((card) => this.assignZone(card));
+  }
+
+  clear() {
+    return this.cards.splice(0);
+  }
+
+  shuffle() {
+    this.cards = shuffleArray(this.cards);
+  }
+
+  takeByName(name: string, count = Number.POSITIVE_INFINITY) {
+    const result: CardEntity[] = [];
+    this.cards = this.cards.filter((card) => {
+      if (card.card.name === name && result.length < count) {
+        result.push(card);
+        return false;
+      }
+      return true;
+    });
+    return result;
+  }
+
+  private assignZone(card: CardEntity) {
+    if (this.zone) card.zone = this.zone;
   }
 }
