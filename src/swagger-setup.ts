@@ -5,6 +5,7 @@ import { GamesModule } from './games/games.module';
 import { UsersModule } from './users/users.module';
 import { QuizesModule } from './quizes/quizes.module';
 import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
+import { StarfallModule } from './starfall/starfall.module';
 
 export const swaggerSetup = (app: INestApplication) => {
   // Auth Module docs
@@ -74,4 +75,19 @@ export const swaggerSetup = (app: INestApplication) => {
   );
 
   SwaggerModule.setup('/api/docs/quizes', app, quizesModuleDocument);
+
+  const starfallModuleOptions = new DocumentBuilder()
+    .setTitle('Gamelandia Starfall API')
+    .setDescription('Starfall game API methods')
+    .setVersion('1.0.0')
+    .addBearerAuth()
+    .build();
+
+  const starfallModuleDocument = SwaggerModule.createDocument(
+    app,
+    starfallModuleOptions,
+    { include: [StarfallModule] }
+  );
+
+  SwaggerModule.setup('/api/docs/starfall', app, starfallModuleDocument);
 };

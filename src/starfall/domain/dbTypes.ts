@@ -118,6 +118,7 @@ export type SerializedAction = {
 
 export interface StarfallSnapshot {
   id: string;
+  startingHp: number;
   status: GameStatus;
   currentPlayerId: string | null;
   turnNumber: number;

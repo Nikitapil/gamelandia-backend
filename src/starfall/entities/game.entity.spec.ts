@@ -226,16 +226,26 @@ describe('GameEntity', () => {
     const current = game.currentPlayer!;
     const played = current.hand.cards[0];
 
-    game.executeCommand('command', 0, () =>
-      game.playCard(current.id, played.id)
-    );
+    game.executeCommand({
+      commandId: 'command',
+      expectedVersion: 0,
+      command: () => game.playCard(current.id, played.id)
+    });
     expect(game.version).toBe(1);
-    game.executeCommand('command', 1, () => {
-      throw new Error('must not execute twice');
+    game.executeCommand({
+      commandId: 'command',
+      expectedVersion: 1,
+      command: () => {
+        throw new Error('must not execute twice');
+      }
     });
     expect(game.version).toBe(1);
     expect(() =>
-      game.executeCommand('new-command', 0, () => undefined)
+      game.executeCommand({
+        commandId: 'new-command',
+        expectedVersion: 0,
+        command: () => undefined
+      })
     ).toThrow(/version conflict/);
   });
 

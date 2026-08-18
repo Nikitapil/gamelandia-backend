@@ -130,7 +130,15 @@ const action = {
     name: TCardAbilitiesNames.DISCARD_OPPONENT_CARD,
     value
   }),
-  scrap: (max = 1, optional = true, drawPerScrapped?: number): Action => ({
+  scrap: ({
+    max = 1,
+    optional = true,
+    drawPerScrapped
+  }: {
+    max?: number;
+    optional?: boolean;
+    drawPerScrapped?: number;
+  } = {}): Action => ({
     name: TCardAbilitiesNames.SCRAP_CARD_FROM_HAND_OR_PILE,
     max,
     optional,
@@ -359,7 +367,7 @@ export const cards: Card[] = [
     cost: 8,
     health: 6,
     outpost: true,
-    abilities: [action.scrap(2, true, 1)]
+    abilities: [action.scrap({ max: 2, drawPerScrapped: 1 })]
   }),
   defineCard({
     fraction: 'techno',

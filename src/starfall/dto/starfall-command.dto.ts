@@ -9,6 +9,7 @@ import {
   ValidatorConstraint,
   ValidatorConstraintInterface
 } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export const STARFALL_COMMANDS = [
   'play_card',
@@ -132,16 +133,28 @@ class StarfallCommandPayloadConstraint implements ValidatorConstraintInterface {
 export class StarfallCommandDto<
   T extends StarfallCommandType = StarfallCommandType
 > {
+  @ApiProperty({
+    type: String,
+    description: 'Unique idempotency key',
+    example: 'uuid'
+  })
   @IsString()
   commandId: string;
 
+  @ApiProperty({
+    type: Number,
+    minimum: 0,
+    description: 'Expected game state version'
+  })
   @IsInt()
   @Min(0)
   expectedVersion: number;
 
+  @ApiProperty({ type: String, enum: STARFALL_COMMANDS })
   @IsIn(STARFALL_COMMANDS)
   type: T;
 
+  @ApiProperty({ type: Object, description: 'Payload matching command type' })
   @IsObject()
   @Validate(StarfallCommandPayloadConstraint)
   payload: StarfallCommandPayload<T> = {} as StarfallCommandPayload<T>;

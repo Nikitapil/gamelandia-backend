@@ -17,6 +17,24 @@ import {
 } from './dto/starfall-command.dto';
 import { GameEntity } from './entities/game.entity';
 
+interface GameRequest<T> {
+  gameId: string;
+  dto: T;
+  playerId: string;
+}
+
+interface ApplyCommandParams {
+  game: GameEntity;
+  dto: TypedStarfallCommandDto;
+  playerId: string;
+}
+
+interface SaveGameParams {
+  game: GameEntity;
+  expectedVersion: number;
+  playerIdToConnect?: string;
+}
+
 @Injectable()
 export class StarfallService {
   constructor(private readonly prisma: PrismaService) {}
@@ -36,6 +54,7 @@ export class StarfallService {
       }))
     );
     const game = new GameEntity({
+      startingHp: dto.startingHp,
       players: [
         {
           id: playerId,
@@ -65,15 +84,19 @@ export class StarfallService {
     return game.getViewFor(playerId);
   }
 
-  async joinGame(gameId: string, dto: JoinStarfallGameDto, playerId: string) {
+  async joinGame({ gameId, dto, playerId }: GameRequest<JoinStarfallGameDto>) {
     const game = await this.getGame(gameId);
     try {
-      game.executeCommand(
-        `join:${playerId}:${dto.expectedVersion}`,
-        dto.expectedVersion,
-        () => game.addPlayer(playerId, dto.startingHp)
-      );
-      await this.saveWithOptimisticLock(game, dto.expectedVersion, playerId);
+      game.executeCommand({
+        commandId: `join:${playerId}:${dto.expectedVersion}`,
+        expectedVersion: dto.expectedVersion,
+        command: () => game.addPlayer(playerId)
+      });
+      await this.saveWithOptimisticLock({
+        game,
+        expectedVersion: dto.expectedVersion,
+        playerIdToConnect: playerId
+      });
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Unable to join game'
@@ -82,13 +105,22 @@ export class StarfallService {
     return game.getViewFor(playerId);
   }
 
-  async startGame(gameId: string, dto: StartStarfallGameDto, playerId: string) {
+  async startGame({
+    gameId,
+    dto,
+    playerId
+  }: GameRequest<StartStarfallGameDto>) {
     const game = await this.getGame(gameId);
     try {
-      game.executeCommand(dto.commandId, dto.expectedVersion, () =>
-        game.startGame(playerId)
-      );
-      await this.saveWithOptimisticLock(game, dto.expectedVersion);
+      game.executeCommand({
+        commandId: dto.commandId,
+        expectedVersion: dto.expectedVersion,
+        command: () => game.startGame(playerId)
+      });
+      await this.saveWithOptimisticLock({
+        game,
+        expectedVersion: dto.expectedVersion
+      });
     } catch (error) {
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Unable to start game'
@@ -101,17 +133,27 @@ export class StarfallService {
     return (await this.getGame(gameId)).getViewFor(playerId);
   }
 
-  async execute(gameId: string, dto: StarfallCommandDto, playerId: string) {
+  async execute({ gameId, dto, playerId }: GameRequest<StarfallCommandDto>) {
     const game = await this.getGame(gameId);
     if (game.processedCommandIds.has(dto.commandId)) {
       return game.getViewFor(playerId);
     }
 
     try {
-      game.executeCommand(dto.commandId, dto.expectedVersion, () =>
-        this.applyCommand(game, dto as TypedStarfallCommandDto, playerId)
-      );
-      await this.saveWithOptimisticLock(game, dto.expectedVersion);
+      game.executeCommand({
+        commandId: dto.commandId,
+        expectedVersion: dto.expectedVersion,
+        command: () =>
+          this.applyCommand({
+            game,
+            dto: dto as TypedStarfallCommandDto,
+            playerId
+          })
+      });
+      await this.saveWithOptimisticLock({
+        game,
+        expectedVersion: dto.expectedVersion
+      });
     } catch (error) {
       if (
         error instanceof Error &&
@@ -127,22 +169,18 @@ export class StarfallService {
     return game.getViewFor(playerId);
   }
 
-  private applyCommand(
-    game: GameEntity,
-    dto: TypedStarfallCommandDto,
-    playerId: string
-  ) {
+  private applyCommand({ game, dto, playerId }: ApplyCommandParams) {
     switch (dto.type) {
       case 'play_card':
         return game.playCard(playerId, dto.payload.cardId);
       case 'buy_card':
         return game.buyCard(playerId, dto.payload.cardId);
       case 'use_ability':
-        return game.useCardAbility(
+        return game.useCardAbility({
           playerId,
-          dto.payload.cardId,
-          dto.payload.abilityId
-        );
+          cardId: dto.payload.cardId,
+          abilityId: dto.payload.abilityId
+        });
       case 'resolve_pending':
         return game.resolvePendingAction(playerId, dto.payload);
       case 'cancel_pending':
@@ -164,11 +202,11 @@ export class StarfallService {
     return GameEntity.fromSnapshot(record.state);
   }
 
-  private async saveWithOptimisticLock(
-    game: GameEntity,
-    expectedVersion: number,
-    playerIdToConnect?: string
-  ) {
+  private async saveWithOptimisticLock({
+    game,
+    expectedVersion,
+    playerIdToConnect
+  }: SaveGameParams) {
     const snapshot = game.toSnapshot();
     try {
       await this.prisma.starfallGame.update({

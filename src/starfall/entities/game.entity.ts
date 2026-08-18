@@ -21,6 +21,7 @@ import { PlayerEntity } from './player.entity';
 
 export interface GameEntityParams {
   id?: string;
+  startingHp?: number;
   players: PlayerFromDb[];
   currentPlayerId?: string | null;
   gameCards: CardFromDb[];
@@ -38,11 +39,50 @@ export interface PendingSelection {
   cancel?: boolean;
 }
 
+interface ExecuteCommandParams<T> {
+  commandId: string;
+  expectedVersion: number;
+  command: () => T;
+}
+
+interface UseCardAbilityParams {
+  playerId: string;
+  cardId: string;
+  abilityId: string;
+}
+
+interface ExecuteActionsParams {
+  actions: Action[];
+  source: CardEntity;
+  abilityId: string;
+}
+
+interface ExecuteActionParams {
+  action: Action;
+  source: CardEntity;
+  abilityId: string;
+  continuation: SerializedAction[];
+}
+
+interface ExecuteContinuationParams {
+  continuation: SerializedAction[];
+  source: CardEntity;
+  abilityId: string;
+}
+
+interface SerializeCardParams {
+  card: CardEntity;
+  deck: CardFromDb['deck'];
+  ownerId?: string;
+  position: number;
+}
+
 const TRADE_ROW_SIZE = 5;
 const HAND_SIZE = 5;
 
 export class GameEntity {
   readonly id: string;
+  readonly startingHp: number;
   readonly players: PlayerEntity[] = [];
   currentPlayer: PlayerEntity | null = null;
   tradeRow = new DeckEntity([], 'trade-row');
@@ -58,6 +98,7 @@ export class GameEntity {
 
   constructor(params: GameEntityParams) {
     this.id = params.id ?? randomUUID();
+    this.startingHp = params.startingHp ?? 50;
     this.status = params.status ?? 'waiting';
     this.turnNumber = params.turnNumber ?? 0;
     this.version = params.version ?? 0;
@@ -118,11 +159,11 @@ export class GameEntity {
     ];
   }
 
-  executeCommand<T>(
-    commandId: string,
-    expectedVersion: number,
-    command: () => T
-  ): T | undefined {
+  executeCommand<T>({
+    commandId,
+    expectedVersion,
+    command
+  }: ExecuteCommandParams<T>): T | undefined {
     if (this.processedCommandIds.has(commandId)) {
       return undefined;
     }
@@ -158,7 +199,7 @@ export class GameEntity {
     this.dealStarterDecks();
   }
 
-  addPlayer(playerId: string, startingHp = 50) {
+  addPlayer(playerId: string) {
     if (this.status !== 'waiting' || this.turnNumber > 0) {
       throw new Error('Players can join only a waiting game');
     }
@@ -168,7 +209,7 @@ export class GameEntity {
     if (this.players.some((player) => player.id === playerId)) {
       throw new Error('The player has already joined this game');
     }
-    const player = new PlayerEntity({ id: playerId, hp: startingHp });
+    const player = new PlayerEntity({ id: playerId, hp: this.startingHp });
     this.players.push(player);
     this.dealStarterDecks();
     return player;
@@ -273,7 +314,7 @@ export class GameEntity {
     return card;
   }
 
-  useCardAbility(playerId: string, cardId: string, abilityId: string) {
+  useCardAbility({ playerId, cardId, abilityId }: UseCardAbilityParams) {
     this.assertCanAct(playerId);
     this.assertNoPendingAction();
     const card = this.requireCurrentPlayersCardInPlay(cardId);
@@ -305,7 +346,11 @@ export class GameEntity {
     if (ability.kind === 'scrap') {
       this.scrapPlayedCard(source);
     }
-    this.executeActions([ability.action], source, ability.id);
+    this.executeActions({
+      actions: [ability.action],
+      source,
+      abilityId: ability.id
+    });
     ability.markAsUsed();
   }
 
@@ -316,20 +361,20 @@ export class GameEntity {
     for (const card of player.cardsInPlay) {
       card.card.persistentAbilities.forEach((ability, index) => {
         if (ability.trigger !== trigger) return;
-        this.executeActions(
-          [ability.action],
-          card,
-          `persistent:${trigger}:${index}`
-        );
+        this.executeActions({
+          actions: [ability.action],
+          source: card,
+          abilityId: `persistent:${trigger}:${index}`
+        });
       });
     }
   }
 
-  executeActions(actions: Action[], source: CardEntity, abilityId: string) {
+  executeActions({ actions, source, abilityId }: ExecuteActionsParams) {
     for (let index = 0; index < actions.length; index++) {
       const action = actions[index];
       const continuation = actions.slice(index + 1);
-      if (this.executeAction(action, source, abilityId, continuation)) {
+      if (this.executeAction({ action, source, abilityId, continuation })) {
         return;
       }
     }
@@ -425,7 +470,11 @@ export class GameEntity {
         source.applyCopy(copied);
         player.addMoney(copied.card.money);
         player.addAttack(copied.card.attack);
-        this.executeActions(copied.card.abilities, source, pending.abilityId);
+        this.executeActions({
+          actions: copied.card.abilities,
+          source,
+          abilityId: pending.abilityId
+        });
         break;
       }
       case 'choose_free_ship': {
@@ -443,7 +492,11 @@ export class GameEntity {
       case 'choose_effect': {
         const option = pending.options[selection.optionIndex ?? -1];
         if (!option) throw new Error('A valid effect option must be selected');
-        this.executeActions(option as Action[], source, pending.abilityId);
+        this.executeActions({
+          actions: option as Action[],
+          source,
+          abilityId: pending.abilityId
+        });
         if (this.pendingAction) {
           this.appendContinuation(pending.continuation);
           return;
@@ -452,7 +505,11 @@ export class GameEntity {
       }
     }
 
-    this.executeContinuation(pending.continuation, source, pending.abilityId);
+    this.executeContinuation({
+      continuation: pending.continuation,
+      source,
+      abilityId: pending.abilityId
+    });
   }
 
   cancelPendingAction(playerId: string) {
@@ -536,6 +593,7 @@ export class GameEntity {
     const viewer = this.requirePlayer(playerId);
     return {
       id: this.id,
+      startingHp: this.startingHp,
       status: this.status,
       currentPlayerId: this.currentPlayer?.id ?? null,
       winnerId: this.winner?.id ?? null,
@@ -572,28 +630,45 @@ export class GameEntity {
 
   toSnapshot(): StarfallSnapshot {
     const cards: CardFromDb[] = [];
-    const pushZone = (
-      deck: DeckEntity,
-      zone: CardFromDb['deck'],
-      ownerId?: string
-    ) =>
+    const pushZone = ({
+      deck,
+      zone,
+      ownerId
+    }: {
+      deck: DeckEntity;
+      zone: CardFromDb['deck'];
+      ownerId?: string;
+    }) =>
       deck.cards.forEach((card, position) =>
-        cards.push(this.serializeCard(card, zone, ownerId, position))
+        cards.push(this.serializeCard({ card, deck: zone, ownerId, position }))
       );
-    pushZone(this.tradeRow, 'trade-row');
-    pushZone(this.unusedDeck, 'unused-deck');
-    pushZone(this.explorers, 'explorers');
-    pushZone(this.starterCards, 'starter-cards');
-    pushZone(this.scrappedCards, 'scrapped');
+    pushZone({ deck: this.tradeRow, zone: 'trade-row' });
+    pushZone({ deck: this.unusedDeck, zone: 'unused-deck' });
+    pushZone({ deck: this.explorers, zone: 'explorers' });
+    pushZone({ deck: this.starterCards, zone: 'starter-cards' });
+    pushZone({ deck: this.scrappedCards, zone: 'scrapped' });
     this.players.forEach((player) => {
-      pushZone(player.deck, 'player-deck', player.id);
-      pushZone(player.hand, 'player-hand', player.id);
-      pushZone(player.pileDeck, 'player-pile-deck', player.id);
-      pushZone(player.bases, 'player-bases', player.id);
-      pushZone(player.currentPlayedCards, 'currently-played', player.id);
+      pushZone({ deck: player.deck, zone: 'player-deck', ownerId: player.id });
+      pushZone({ deck: player.hand, zone: 'player-hand', ownerId: player.id });
+      pushZone({
+        deck: player.pileDeck,
+        zone: 'player-pile-deck',
+        ownerId: player.id
+      });
+      pushZone({
+        deck: player.bases,
+        zone: 'player-bases',
+        ownerId: player.id
+      });
+      pushZone({
+        deck: player.currentPlayedCards,
+        zone: 'currently-played',
+        ownerId: player.id
+      });
     });
     return {
       id: this.id,
+      startingHp: this.startingHp,
       status: this.status,
       currentPlayerId: this.currentPlayer?.id ?? null,
       turnNumber: this.turnNumber,
@@ -624,6 +699,7 @@ export class GameEntity {
     );
     return new GameEntity({
       id: snapshot.id,
+      startingHp: snapshot.startingHp,
       status: snapshot.status,
       currentPlayerId: snapshot.currentPlayerId,
       turnNumber: snapshot.turnNumber,
@@ -638,12 +714,12 @@ export class GameEntity {
     });
   }
 
-  private executeAction(
-    action: Action,
-    source: CardEntity,
-    abilityId: string,
-    continuation: SerializedAction[]
-  ) {
+  private executeAction({
+    action,
+    source,
+    abilityId,
+    continuation
+  }: ExecuteActionParams) {
     if (!this.currentPlayer || !this.defencePlayer) {
       throw new Error('Unable to execute action');
     }
@@ -766,11 +842,11 @@ export class GameEntity {
         return false;
       }
       case TCardAbilitiesNames.SEQUENCE:
-        this.executeActions(
-          [...action.actions, ...(continuation as Action[])],
+        this.executeActions({
+          actions: [...action.actions, ...(continuation as Action[])],
           source,
           abilityId
-        );
+        });
         return true;
       case TCardAbilitiesNames.CHOOSE_ONE:
         this.pendingAction = {
@@ -784,11 +860,11 @@ export class GameEntity {
         return true;
       case TCardAbilitiesNames.IF_BASES_IN_PLAY:
         if (player.bases.size >= action.min) {
-          this.executeActions(
-            [...action.actions, ...(continuation as Action[])],
+          this.executeActions({
+            actions: [...action.actions, ...(continuation as Action[])],
             source,
             abilityId
-          );
+          });
           return true;
         }
         return false;
@@ -808,13 +884,17 @@ export class GameEntity {
     };
   }
 
-  private executeContinuation(
-    continuation: SerializedAction[],
-    source: CardEntity,
-    abilityId: string
-  ) {
+  private executeContinuation({
+    continuation,
+    source,
+    abilityId
+  }: ExecuteContinuationParams) {
     if (continuation.length) {
-      this.executeActions(continuation as Action[], source, abilityId);
+      this.executeActions({
+        actions: continuation as Action[],
+        source,
+        abilityId
+      });
     }
   }
 
@@ -967,12 +1047,12 @@ export class GameEntity {
     };
   }
 
-  private serializeCard(
-    card: CardEntity,
-    deck: CardFromDb['deck'],
-    ownerId: string | undefined,
-    position: number
-  ): CardFromDb {
+  private serializeCard({
+    card,
+    deck,
+    ownerId,
+    position
+  }: SerializeCardParams): CardFromDb {
     return {
       id: card.id,
       name: card.card.name,

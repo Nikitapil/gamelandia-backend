@@ -32,19 +32,19 @@ describe('StarfallService', () => {
   it('persists commands with optimistic locking and idempotency', async () => {
     const service = new StarfallService(prisma as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
-    await service.joinGame(
-      created.id,
-      { expectedVersion: 0, startingHp: 50 },
-      '2'
-    );
-    const started = await service.startGame(
-      created.id,
-      {
+    await service.joinGame({
+      gameId: created.id,
+      dto: { expectedVersion: 0 },
+      playerId: '2'
+    });
+    const started = await service.startGame({
+      gameId: created.id,
+      dto: {
         commandId: 'start',
         expectedVersion: 1
       },
-      '1'
-    );
+      playerId: '1'
+    });
     const cardId = started.players.find((player) => player.id === '1')!.hand![0]
       .id;
     const gameId = created.id;
@@ -55,8 +55,16 @@ describe('StarfallService', () => {
       type: 'play_card' as const,
       payload: { cardId }
     };
-    const after = await service.execute(gameId, command, '1');
-    const duplicate = await service.execute(gameId, command, '1');
+    const after = await service.execute({
+      gameId,
+      dto: command,
+      playerId: '1'
+    });
+    const duplicate = await service.execute({
+      gameId,
+      dto: command,
+      playerId: '1'
+    });
 
     expect(after.version).toBe(3);
     expect(duplicate.version).toBe(3);
@@ -68,28 +76,30 @@ describe('StarfallService', () => {
     const created = await service.createGame({ startingHp: 50 }, '1');
 
     await expect(
-      service.execute(
-        created.id,
-        {
+      service.execute({
+        gameId: created.id,
+        dto: {
           commandId: 'stale',
           expectedVersion: 10,
           type: 'end_turn',
           payload: {}
         },
-        '1'
-      )
+        playerId: '1'
+      })
     ).rejects.toThrow(/version conflict/i);
   });
 
   it('connects a joined player to the persisted game', async () => {
     const service = new StarfallService(prisma as never);
-    const created = await service.createGame({ startingHp: 50 }, '1');
+    const created = await service.createGame({ startingHp: 77 }, '1');
 
-    await service.joinGame(
-      created.id,
-      { expectedVersion: 0, startingHp: 50 },
-      '2'
-    );
+    const joined = await service.joinGame({
+      gameId: created.id,
+      dto: { expectedVersion: 0 },
+      playerId: '2'
+    });
+
+    expect(joined.players.find((player) => player.id === '2')?.hp).toBe(77);
 
     expect(prisma.starfallGame.update).toHaveBeenCalledWith({
       where: { id_version: { id: created.id, version: 0 } },

@@ -1,11 +1,14 @@
 import { IsInt, Min } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class JoinStarfallGameDto {
+  @ApiProperty({
+    type: Number,
+    description: 'Game state version expected by the client',
+    example: 0,
+    minimum: 0
+  })
   @IsInt()
   @Min(0)
   expectedVersion: number;
-
-  @IsInt()
-  @Min(1)
-  startingHp = 50;
 }
