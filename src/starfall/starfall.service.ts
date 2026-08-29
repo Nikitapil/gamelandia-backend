@@ -11,6 +11,8 @@ import { CardFromDb } from './domain/dbTypes';
 import { CreateStarfallGameDto } from './dto/create-starfall-game.dto';
 import { JoinStarfallGameDto } from './dto/join-starfall-game.dto';
 import { StartStarfallGameDto } from './dto/start-starfall-game.dto';
+import { GetStarfallGamesQueryDto } from './dto/get-starfall-games-query.dto';
+import { StarfallGameListItemDto } from './dto/starfall-game-list-item.dto';
 import {
   StarfallCommandDto,
   TypedStarfallCommandDto
@@ -75,6 +77,7 @@ export class StarfallService {
       data: {
         id: game.id,
         version: game.version,
+        status: game.status,
         state: game.toSnapshot(),
         players: {
           connect: { id: this.userId(playerId) }
@@ -82,6 +85,29 @@ export class StarfallService {
       }
     });
     return game.getViewFor(playerId);
+  }
+
+  async getGames(
+    dto: GetStarfallGamesQueryDto
+  ): Promise<StarfallGameListItemDto[]> {
+    const onlyNotStarted = dto.notStarted === true || dto.notStarted === 'true';
+    const games = await this.prisma.starfallGame.findMany({
+      where: onlyNotStarted ? { status: 'waiting' } : undefined,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        players: {
+          select: { username: true }
+        }
+      }
+    });
+
+    return games.map((game) => ({
+      id: game.id,
+      createdAt: game.createdAt,
+      players: game.players.map((player) => player.username)
+    }));
   }
 
   async joinGame({ gameId, dto, playerId }: GameRequest<JoinStarfallGameDto>) {
@@ -218,6 +244,7 @@ export class StarfallService {
         },
         data: {
           version: snapshot.version,
+          status: snapshot.status,
           state: snapshot,
           ...(playerIdToConnect
             ? {

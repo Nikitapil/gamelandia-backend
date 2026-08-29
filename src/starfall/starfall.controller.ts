@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -16,6 +16,8 @@ import { JoinStarfallGameDto } from './dto/join-starfall-game.dto';
 import { StartStarfallGameDto } from './dto/start-starfall-game.dto';
 import { StarfallCommandDto } from './dto/starfall-command.dto';
 import { StarfallGameViewDto } from './dto/starfall-game-view.dto';
+import { GetStarfallGamesQueryDto } from './dto/get-starfall-games-query.dto';
+import { StarfallGameListItemDto } from './dto/starfall-game-list-item.dto';
 import { STARFALL_COMMAND_SWAGGER_MODELS } from './dto/starfall-command.swagger.dto';
 import { StarfallService } from './starfall.service';
 import {
@@ -24,6 +26,7 @@ import {
 } from './starfall-game-context.decorator';
 
 @ApiTags('Starfall')
+@ApiBearerAuth()
 @ApiExtraModels(...STARFALL_COMMAND_SWAGGER_MODELS)
 @Controller('starfall')
 @UseGuards(JwtGuard)
@@ -38,6 +41,16 @@ export class StarfallController {
   @ApiResponse({ status: 201, type: StarfallGameViewDto })
   createGame(@Body() dto: CreateStarfallGameDto, @User('id') userId: number) {
     return this.starfallService.createGame(dto, String(userId));
+  }
+
+  @Get('games')
+  @ApiOperation({
+    summary: 'Get Starfall games ordered from newest to oldest',
+    operationId: 'getStarfallGames'
+  })
+  @ApiResponse({ status: 200, type: [StarfallGameListItemDto] })
+  getGames(@Query() dto: GetStarfallGamesQueryDto) {
+    return this.starfallService.getGames(dto);
   }
 
   @Get('games/:gameId')

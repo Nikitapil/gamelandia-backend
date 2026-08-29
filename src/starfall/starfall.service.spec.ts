@@ -1,6 +1,12 @@
 import { StarfallService } from './starfall.service';
 
 describe('StarfallService', () => {
+  type GameListRecord = {
+    id: string;
+    createdAt: Date;
+    players: { username: string }[];
+  };
+
   const records = new Map<
     string,
     { id: string; version: number; state: unknown }
@@ -11,6 +17,7 @@ describe('StarfallService', () => {
         records.set(data.id, data);
         return data;
       }),
+      findMany: jest.fn(async (): Promise<GameListRecord[]> => []),
       findUnique: jest.fn(async ({ where }) => records.get(where.id) ?? null),
       update: jest.fn(async ({ where, data }) => {
         const key = where.id_version;
@@ -105,9 +112,62 @@ describe('StarfallService', () => {
       where: { id_version: { id: created.id, version: 0 } },
       data: {
         version: 1,
+        status: 'waiting',
         state: expect.any(Object),
         players: { connect: { id: 2 } }
       }
     });
+  });
+
+  it('returns all games ordered from newest to oldest', async () => {
+    const service = new StarfallService(prisma as never);
+    const newestCreatedAt = new Date('2026-08-29T12:00:00.000Z');
+    const oldestCreatedAt = new Date('2026-08-28T12:00:00.000Z');
+    prisma.starfallGame.findMany.mockResolvedValueOnce([
+      {
+        id: 'newest',
+        createdAt: newestCreatedAt,
+        players: [{ username: 'alice' }, { username: 'bob' }]
+      },
+      {
+        id: 'oldest',
+        createdAt: oldestCreatedAt,
+        players: [{ username: 'charlie' }]
+      }
+    ]);
+
+    const games = await service.getGames({});
+
+    expect(prisma.starfallGame.findMany).toHaveBeenCalledWith({
+      where: undefined,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        createdAt: true,
+        players: { select: { username: true } }
+      }
+    });
+    expect(games).toEqual([
+      {
+        id: 'newest',
+        createdAt: newestCreatedAt,
+        players: ['alice', 'bob']
+      },
+      {
+        id: 'oldest',
+        createdAt: oldestCreatedAt,
+        players: ['charlie']
+      }
+    ]);
+  });
+
+  it('filters games that have not started', async () => {
+    const service = new StarfallService(prisma as never);
+
+    await service.getGames({ notStarted: 'true' });
+
+    expect(prisma.starfallGame.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { status: 'waiting' } })
+    );
   });
 });
