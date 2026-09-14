@@ -13,7 +13,7 @@ import { User } from '../decorators/User.decorator';
 import { JwtGuard } from '../guards/auth/jwt.guard';
 import { CreateStarfallGameDto } from './dto/create-starfall-game.dto';
 import { JoinStarfallGameDto } from './dto/join-starfall-game.dto';
-import { StartStarfallGameDto } from './dto/start-starfall-game.dto';
+import { StarfallLobbyDto } from './dto/starfall-lobby.dto';
 import { StarfallCommandDto } from './dto/starfall-command.dto';
 import { StarfallGameViewDto } from './dto/starfall-game-view.dto';
 import { GetStarfallGamesQueryDto } from './dto/get-starfall-games-query.dto';
@@ -82,22 +82,15 @@ export class StarfallController {
     });
   }
 
-  @Post('games/:gameId/start')
+  @Get('games/:gameId/lobby')
   @ApiOperation({
-    summary: 'Start a Starfall game',
-    operationId: 'startStarfallGame'
+    summary: 'Get lobby details without private cards',
+    operationId: 'getStarfallLobby'
   })
   @ApiParam({ name: 'gameId', type: String })
-  @ApiResponse({ status: 201, type: StarfallGameViewDto })
-  startGame(
-    @Body() dto: StartStarfallGameDto,
-    @StarfallGameContext() context: StarfallGameContextValue
-  ) {
-    return this.starfallService.startGame({
-      gameId: context.gameId,
-      dto,
-      playerId: context.playerId
-    });
+  @ApiResponse({ status: 200, type: StarfallLobbyDto })
+  getLobby(@StarfallGameContext() context: StarfallGameContextValue) {
+    return this.starfallService.getLobby(context.gameId);
   }
 
   @Post('games/:gameId/commands')

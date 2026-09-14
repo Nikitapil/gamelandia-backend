@@ -61,7 +61,7 @@ export class PlayerEntity {
     if (value < 0) {
       throw new Error('Damage cannot be negative');
     }
-    this.hp = this.hp - value;
+    this.hp = Math.max(0, this.hp - value);
   }
 
   takeCardFromHand(cardId: string) {

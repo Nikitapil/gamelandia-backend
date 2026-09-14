@@ -49,6 +49,23 @@ const card = (name: string, id = `test-${name}`) => {
 };
 
 describe('GameEntity', () => {
+  it('projects names by player ID without adding profile data to snapshots', () => {
+    const game = createGame();
+    const snapshot = game.toSnapshot();
+    game.setPlayerNames([
+      { id: 'two', username: 'Bob' },
+      { id: 'one', username: 'Alice' }
+    ]);
+    expect(game.playerNames).toEqual([
+      { id: 'one', username: 'Alice' },
+      { id: 'two', username: 'Bob' }
+    ]);
+    expect(
+      game.getViewFor('one').players.map((player) => player.username)
+    ).toEqual(['Alice', 'Bob']);
+    expect(game.toSnapshot()).toEqual(snapshot);
+  });
+
   it('separates decks and deals the correct opening hands', () => {
     const game = createGame();
 
@@ -74,7 +91,10 @@ describe('GameEntity', () => {
 
   it('moves a played ship once and discards it at end of turn', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+    if (!current) {
+      throw new Error('invalid current player');
+    }
     const played = current.hand.cards[0];
 
     game.playCard(current.id, played.id);
@@ -90,7 +110,12 @@ describe('GameEntity', () => {
 
   it('keeps a base in play across turns', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const base = card('Blob Wheel');
     current.hand.add(base);
 
@@ -103,7 +128,12 @@ describe('GameEntity', () => {
 
   it('executes persistent ship-played abilities without checking card names', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const fleetHq = card('Fleet HQ');
     const firstShip = card('Scout', 'fleet-ship-one');
     const secondShip = card('Scout', 'fleet-ship-two');
@@ -118,7 +148,12 @@ describe('GameEntity', () => {
 
   it('activates ally abilities in either play order', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const first = card('Blob Fighter', 'blob-one');
     const second = card('Trade Pod', 'blob-two');
     current.hand.addMany([first, second]);
@@ -132,7 +167,12 @@ describe('GameEntity', () => {
 
   it('uses Mech World as an ally for every faction', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const mechWorld = card('Mech World');
     const blob = card('Blob Fighter');
     current.hand.addMany([mechWorld, blob]);
@@ -145,7 +185,12 @@ describe('GameEntity', () => {
 
   it('creates and resolves a scrap pending action', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const bot = card('Trade Bot');
     const target = card('Scout', 'scrap-target');
     current.hand.addMany([bot, target]);
@@ -161,7 +206,12 @@ describe('GameEntity', () => {
 
   it('copies another played ship with Stealth Needle', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid current player');
+    }
+
     const fighter = card('Blob Fighter', 'copy-target');
     const needle = card('Stealth Needle');
     current.hand.addMany([fighter, needle]);
@@ -178,8 +228,13 @@ describe('GameEntity', () => {
 
   it('blocks player and regular bases while an outpost exists', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
-    const defender = game.defencePlayer!;
+    const current = game.currentPlayer;
+    const defender = game.defencePlayer;
+
+    if (!current || !defender) {
+      throw new Error('invalid current player');
+    }
+
     const outpost = card('Battle Station');
     const regular = card('Blob Wheel');
     outpost.play();
@@ -197,8 +252,13 @@ describe('GameEntity', () => {
 
   it('finishes the game with exactly one winner', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
-    const defender = game.defencePlayer!;
+    const current = game.currentPlayer;
+    const defender = game.defencePlayer;
+
+    if (!current || !defender) {
+      throw new Error('invalid current player');
+    }
+
     current.attack = defender.hp;
 
     game.attackPlayer(current.id, defender.hp);
@@ -214,17 +274,27 @@ describe('GameEntity', () => {
     const restored = GameEntity.fromSnapshot(snapshot);
 
     expect(restored.toSnapshot()).toEqual(snapshot);
-    const opponent = restored.defencePlayer!;
-    const view = restored.getViewFor(restored.currentPlayer!.id);
-    const opponentView = view.players.find((item) => item.id === opponent.id)!;
-    expect(opponentView.hand).toBeUndefined();
-    expect(opponentView.handCount).toBe(opponent.hand.size);
+    const opponent = restored.defencePlayer;
+
+    if (!restored.currentPlayer || !opponent) {
+      throw new Error('invalid players state');
+    }
+
+    const view = restored.getViewFor(restored.currentPlayer.id);
+    const opponentView = view.players.find((item) => item.id === opponent.id);
+    expect(opponentView?.hand).toBeUndefined();
+    expect(opponentView?.handCount).toBe(opponent.hand.size);
   });
 
   it('rejects stale commands and applies a command id once', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
-    const played = current.hand.cards[0];
+    const current = game.currentPlayer;
+
+    const played = current?.hand.cards[0];
+
+    if (!played || !current) {
+      throw new Error('invalid players state');
+    }
 
     game.executeCommand({
       commandId: 'command',
@@ -251,7 +321,12 @@ describe('GameEntity', () => {
 
   it('shrinks the trade row after the trade deck is exhausted', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid players state');
+    }
+
     game.unusedDeck.clear();
     current.money = 100;
     const before = game.tradeRow.size;
@@ -265,7 +340,12 @@ describe('GameEntity', () => {
 
   it('does not mutate purchase zones when trade is insufficient', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
+    const current = game.currentPlayer;
+
+    if (!current) {
+      throw new Error('invalid players state');
+    }
+
     const expensive = game.tradeRow.cards.reduce((left, right) =>
       left.card.cost > right.card.cost ? left : right
     );
@@ -281,21 +361,155 @@ describe('GameEntity', () => {
 
   it('reshuffles the discard pile when the personal deck is empty', () => {
     const game = createGame();
-    const current = game.currentPlayer!;
-    current.hand.clear();
-    current.deck.clear();
+    const current = game.currentPlayer;
+
+    current?.hand.clear();
+    current?.deck.clear();
     const discarded = [
       card('Scout', 'discard-one'),
       card('Trooper', 'discard-two')
     ];
-    current.pileDeck.replaceAll(discarded);
+    current?.pileDeck.replaceAll(discarded);
 
-    const drawn = current.getCardsFromDeck(2);
+    const drawn = current?.getCardsFromDeck(2);
 
     expect(drawn).toHaveLength(2);
-    expect(new Set(drawn.map((item) => item.id))).toEqual(
+    expect(new Set(drawn?.map((item) => item.id))).toEqual(
       new Set(discarded.map((item) => item.id))
     );
-    expect(current.pileDeck.size).toBe(0);
+    expect(current?.pileDeck.size).toBe(0);
+  });
+  it('finishes on overkill and rejects further actions', () => {
+    const game = createGame();
+    const player = game.currentPlayer;
+    if (!player || !game.defencePlayer) {
+      throw new Error('invalid game state');
+    }
+    player.attack = 51;
+    game.attackPlayer(player.id, 51);
+    expect(game.defencePlayer.hp).toBe(0);
+    expect(game.status).toBe('finished');
+    expect(game.winner?.id).toBe(player.id);
+    expect(() => game.endTurn(player.id)).toThrow(/active/);
+  });
+
+  it('exposes real explorers and spends the next-ship flag only on a ship', () => {
+    const game = createGame();
+    const player = game.currentPlayer;
+    const office = card('Central Office');
+    if (!player) {
+      throw new Error('invalid game state');
+    }
+    player.hand.add(office);
+    game.playCard(player.id, office.id);
+    game.useCardAbility({
+      playerId: player.id,
+      cardId: office.id,
+      abilityId: 'primary:0'
+    });
+    const restored = GameEntity.fromSnapshot(game.toSnapshot());
+    const current = restored.currentPlayer;
+    if (!current) {
+      throw new Error('invalid game state');
+    }
+    const view = restored.getViewFor(current.id);
+    expect(view.players.find((p) => p.id === current.id)?.nextShipToTop).toBe(
+      true
+    );
+    expect(
+      view.players.find((p) => p.id !== current.id)?.nextShipToTop
+    ).toBeUndefined();
+    current.money = 100;
+    const base = card('Blob Wheel');
+    restored.tradeRow.add(base);
+    restored.buyCard(current.id, base.id);
+    expect(current.nextShipToTop).toBe(true);
+    expect(current.pileDeck.has(base.id)).toBe(true);
+    if (!view.explorer) {
+      throw new Error('invalid game view state');
+    }
+    restored.buyCard(current.id, view.explorer?.id);
+    expect(current.deck.cards[0].id).toBe(view.explorer?.id);
+    expect(current.nextShipToTop).toBe(false);
+  });
+
+  it('keeps copied abilities and usage after scrapping the original and restoring', () => {
+    const game = createGame();
+    const player = game.currentPlayer;
+    if (!player) {
+      throw new Error('invalid game state');
+    }
+    const ram = card('Ram');
+    const needle = card('Stealth Needle');
+    const ally = card('Blob Fighter');
+    player.hand.addMany([ram, needle, ally]);
+    game.playCard(player.id, ram.id);
+    game.playCard(player.id, needle.id);
+    game.resolvePendingAction(player.id, { cardId: ram.id });
+    game.useCardAbility({
+      playerId: player.id,
+      cardId: needle.id,
+      abilityId: 'copied:ally:0'
+    });
+    game.useCardAbility({
+      playerId: player.id,
+      cardId: ram.id,
+      abilityId: 'scrap:0'
+    });
+    game.playCard(player.id, ally.id);
+    const restored = GameEntity.fromSnapshot(game.toSnapshot());
+    const copy = restored.currentPlayer?.currentPlayedCards.requireCardById(
+      needle.id
+    );
+    expect(copy?.requireAbility('copied:ally:0').isUsed).toBe(true);
+    expect(copy?.requireAbility('copied:scrap:0').isUsed).toBe(false);
+    if (!copy) {
+      throw new Error('invalid game state');
+    }
+    expect(restored.hasAllyFor(copy)).toBe(true);
+    const publicCopy = restored
+      .getViewFor(player.id)
+      .players.find((p) => p.id === player.id)
+      ?.playedShips.find((c) => c.id === needle.id);
+    expect(publicCopy?.copiedCardId).toBe(ram.id);
+    expect(
+      publicCopy?.abilityStates.find((a) => a.id === 'copied:scrap:0')
+        ?.isAvailable
+    ).toBe(true);
+    expect(
+      publicCopy?.abilityStates.find((a) => a.id === 'copied:ally:0')
+        ?.isAvailable
+    ).toBe(false);
+    if (!restored.defencePlayer) {
+      throw new Error('invalid game state');
+    }
+    const opponentView = restored.getViewFor(restored.defencePlayer.id);
+    expect(
+      opponentView.players
+        .flatMap((p) => p.playedShips)
+        .flatMap((c) => c.abilityStates)
+        .every((a) => !a.isAvailable)
+    ).toBe(true);
+  });
+
+  it('does not deadlock mandatory scrap when there are no eligible cards', () => {
+    const game = createGame();
+    const player = game.currentPlayer;
+    if (!player) {
+      throw new Error('invalid game state');
+    }
+    player.hand.clear();
+    player.deck.clear();
+    player.pileDeck.clear();
+    const base = card('Machine Base');
+    player.hand.add(base);
+    game.playCard(player.id, base.id);
+    game.useCardAbility({
+      playerId: player.id,
+      cardId: base.id,
+      abilityId: 'primary:0'
+    });
+    expect(game.pendingAction).toBeNull();
+    expect(() => game.endTurn(player.id)).not.toThrow();
   });
 });

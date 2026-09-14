@@ -52,6 +52,23 @@ export class StarfallPersistentAbilityDto {
   action: StarfallActionDto;
 }
 
+export class StarfallAbilityStateDto {
+  @ApiProperty({ type: String })
+  id: string;
+
+  @ApiProperty({ type: String, enum: ['primary', 'ally', 'scrap'] })
+  kind: 'primary' | 'ally' | 'scrap';
+
+  @ApiProperty({ type: StarfallActionDto })
+  action: StarfallActionDto;
+
+  @ApiProperty({ type: Boolean })
+  isUsed: boolean;
+
+  @ApiProperty({ type: Boolean })
+  isAvailable: boolean;
+}
+
 export class StarfallCardViewDto {
   @ApiProperty({ type: String })
   id: string;
@@ -112,6 +129,12 @@ export class StarfallCardViewDto {
 
   @ApiProperty({ type: [String] })
   usedAbilities: string[];
+
+  @ApiProperty({ type: String, nullable: true })
+  copiedCardId: string | null;
+
+  @ApiProperty({ type: [StarfallAbilityStateDto] })
+  abilityStates: StarfallAbilityStateDto[];
 }
 
 export class StarfallPendingActionDto {
@@ -186,6 +209,12 @@ export class StarfallPendingActionDto {
 
 export class StarfallPlayerViewDto {
   @ApiProperty({ type: String })
+  username: string;
+
+  @ApiPropertyOptional({ type: Boolean })
+  nextShipToTop?: boolean;
+
+  @ApiProperty({ type: String })
   id: string;
 
   @ApiProperty({ type: Number })
@@ -252,6 +281,9 @@ export class StarfallGameViewDto {
 
   @ApiProperty({ type: Number })
   explorersCount: number;
+
+  @ApiProperty({ type: StarfallCardViewDto, nullable: true })
+  explorer: StarfallCardViewDto | null;
 
   @ApiProperty({ type: Number })
   unusedTradeDeckCount: number;

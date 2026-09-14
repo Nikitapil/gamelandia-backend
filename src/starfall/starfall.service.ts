@@ -1,16 +1,16 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException
 } from '@nestjs/common';
-import { randomUUID } from 'crypto';
+import { randomInt, randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { cards } from './domain/constants';
 import { CardFromDb } from './domain/dbTypes';
 import { CreateStarfallGameDto } from './dto/create-starfall-game.dto';
 import { JoinStarfallGameDto } from './dto/join-starfall-game.dto';
-import { StartStarfallGameDto } from './dto/start-starfall-game.dto';
 import { GetStarfallGamesQueryDto } from './dto/get-starfall-games-query.dto';
 import { StarfallGameListItemDto } from './dto/starfall-game-list-item.dto';
 import {
@@ -18,6 +18,7 @@ import {
   TypedStarfallCommandDto
 } from './dto/starfall-command.dto';
 import { GameEntity } from './entities/game.entity';
+import { getStarfallGamesPlayersSelect } from './db-helpers';
 
 interface GameRequest<T> {
   gameId: string;
@@ -73,7 +74,7 @@ export class StarfallService {
       status: 'waiting'
     });
     game.initNewGame(initialCards);
-    await this.prisma.starfallGame.create({
+    const record = await this.prisma.starfallGame.create({
       data: {
         id: game.id,
         version: game.version,
@@ -82,9 +83,11 @@ export class StarfallService {
         players: {
           connect: { id: this.userId(playerId) }
         }
-      }
+      },
+      select: getStarfallGamesPlayersSelect()
     });
-    return game.getViewFor(playerId);
+    game.setPlayerNames(record.players);
+    return this.privateView(game, playerId);
   }
 
   async getGames(
@@ -112,11 +115,16 @@ export class StarfallService {
 
   async joinGame({ gameId, dto, playerId }: GameRequest<JoinStarfallGameDto>) {
     const game = await this.getGame(gameId);
+    if (game.players.some((player) => player.id === playerId))
+      return this.privateView(game, playerId);
     try {
       game.executeCommand({
         commandId: `join:${playerId}:${dto.expectedVersion}`,
         expectedVersion: dto.expectedVersion,
-        command: () => game.addPlayer(playerId)
+        command: () => {
+          game.addPlayer(playerId);
+          game.startGame(game.players[randomInt(game.players.length)].id);
+        }
       });
       await this.saveWithOptimisticLock({
         game,
@@ -124,45 +132,28 @@ export class StarfallService {
         playerIdToConnect: playerId
       });
     } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.startsWith('State version conflict')
+      ) {
+        throw new ConflictException(error.message);
+      }
       throw new BadRequestException(
         error instanceof Error ? error.message : 'Unable to join game'
       );
     }
-    return game.getViewFor(playerId);
-  }
-
-  async startGame({
-    gameId,
-    dto,
-    playerId
-  }: GameRequest<StartStarfallGameDto>) {
-    const game = await this.getGame(gameId);
-    try {
-      game.executeCommand({
-        commandId: dto.commandId,
-        expectedVersion: dto.expectedVersion,
-        command: () => game.startGame(playerId)
-      });
-      await this.saveWithOptimisticLock({
-        game,
-        expectedVersion: dto.expectedVersion
-      });
-    } catch (error) {
-      throw new BadRequestException(
-        error instanceof Error ? error.message : 'Unable to start game'
-      );
-    }
-    return game.getViewFor(playerId);
+    return this.privateView(game, playerId);
   }
 
   async getGameView(gameId: string, playerId: string) {
-    return (await this.getGame(gameId)).getViewFor(playerId);
+    return this.privateView(await this.getGame(gameId), playerId);
   }
 
   async execute({ gameId, dto, playerId }: GameRequest<StarfallCommandDto>) {
     const game = await this.getGame(gameId);
+    this.assertParticipant(game, playerId);
     if (game.processedCommandIds.has(dto.commandId)) {
-      return game.getViewFor(playerId);
+      return this.privateView(game, playerId);
     }
 
     try {
@@ -192,6 +183,28 @@ export class StarfallService {
       );
     }
 
+    return this.privateView(game, playerId);
+  }
+
+  async getLobby(gameId: string) {
+    const game = await this.getGame(gameId);
+    return {
+      id: game.id,
+      status: game.status,
+      version: game.version,
+      startingHp: game.startingHp,
+      players: game.playerNames
+    };
+  }
+
+  private assertParticipant(game: GameEntity, playerId: string) {
+    if (!game.players.some((player) => player.id === playerId)) {
+      throw new ForbiddenException('You are not a participant in this game');
+    }
+  }
+
+  private privateView(game: GameEntity, playerId: string) {
+    this.assertParticipant(game, playerId);
     return game.getViewFor(playerId);
   }
 
@@ -222,10 +235,16 @@ export class StarfallService {
 
   private async getGame(gameId: string) {
     const record = await this.prisma.starfallGame.findUnique({
-      where: { id: gameId }
+      where: { id: gameId },
+      select: {
+        state: true,
+        ...getStarfallGamesPlayersSelect()
+      }
     });
     if (!record) throw new NotFoundException('Starfall game not found');
-    return GameEntity.fromSnapshot(record.state);
+    const game = GameEntity.fromSnapshot(record.state);
+    game.setPlayerNames(record.players);
+    return game;
   }
 
   private async saveWithOptimisticLock({
@@ -235,7 +254,7 @@ export class StarfallService {
   }: SaveGameParams) {
     const snapshot = game.toSnapshot();
     try {
-      await this.prisma.starfallGame.update({
+      const record = await this.prisma.starfallGame.update({
         where: {
           id_version: {
             id: game.id,
@@ -253,8 +272,15 @@ export class StarfallService {
                 }
               }
             : {})
+        },
+        select: {
+          id: true,
+          ...(playerIdToConnect ? getStarfallGamesPlayersSelect() : false)
         }
       });
+      if (playerIdToConnect && record.players) {
+        game.setPlayerNames(record.players);
+      }
     } catch (error) {
       if (
         typeof error === 'object' &&

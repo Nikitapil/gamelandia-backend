@@ -95,6 +95,7 @@ export class GameEntity {
   version: number;
   pendingAction: PendingAction | null;
   readonly processedCommandIds: Set<string>;
+  private readonly usernames = new Map<string, string>();
 
   constructor(params: GameEntityParams) {
     this.id = params.id ?? randomUUID();
@@ -119,12 +120,26 @@ export class GameEntity {
     this.players.forEach((player) => {
       player.currentPlayedCards.cards.forEach((source) => {
         if (!source.copiedCardId) return;
-        const copied = player.currentPlayedCards.getCardById(
-          source.copiedCardId
+        const copied = this.allCards.find(
+          (card) => card.id === source.copiedCardId
         );
         if (copied) source.applyCopy(copied);
       });
     });
+  }
+
+  setPlayerNames(players: { id: string | number; username: string }[]) {
+    this.usernames.clear();
+    players.forEach((player) =>
+      this.usernames.set(String(player.id), player.username)
+    );
+  }
+
+  get playerNames() {
+    return this.players.map((player) => ({
+      id: player.id,
+      username: this.usernames.get(player.id) ?? 'Player'
+    }));
   }
 
   get winner() {
@@ -554,7 +569,7 @@ export class GameEntity {
     }
     this.currentPlayer.attack -= amount;
     defender.reduceHp(amount);
-    if (defender.hp === 0) {
+    if (defender.hp <= 0) {
       this.finishGame(this.currentPlayer.id);
     }
   }
@@ -581,9 +596,7 @@ export class GameEntity {
     return this.currentPlayer.cardsInPlay.some((candidate) => {
       if (candidate.id === source.id) return false;
       const copied = candidate.copiedCardId
-        ? this.currentPlayer?.currentPlayedCards.getCardById(
-            candidate.copiedCardId
-          )
+        ? this.allCards.find((card) => card.id === candidate.copiedCardId)
         : undefined;
       return candidate.hasFraction(fraction, copied);
     });
@@ -601,28 +614,40 @@ export class GameEntity {
       version: this.version,
       pendingAction:
         this.pendingAction?.playerId === playerId ? this.pendingAction : null,
-      tradeRow: this.tradeRow.cards.map((card) => this.publicCard(card)),
+      tradeRow: this.tradeRow.cards.map((card) =>
+        this.publicCard(card, playerId)
+      ),
       explorersCount: this.explorers.size,
+      explorer: this.explorers.cards[0]
+        ? this.publicCard(this.explorers.cards[0], playerId)
+        : null,
       unusedTradeDeckCount: this.unusedDeck.size,
       scrappedCards: this.scrappedCards.cards.map((card) =>
-        this.publicCard(card)
+        this.publicCard(card, playerId)
       ),
       players: this.players.map((player) => ({
         id: player.id,
+        username: this.usernames.get(player.id) ?? 'Player',
         hp: player.hp,
         money: player.money,
         attack: player.attack,
         isWinner: player.isWinner,
+        nextShipToTop:
+          player.id === viewer.id ? player.nextShipToTop : undefined,
         hand:
           player.id === viewer.id
-            ? player.hand.cards.map((card) => this.publicCard(card))
+            ? player.hand.cards.map((card) => this.publicCard(card, playerId))
             : undefined,
         handCount: player.hand.size,
         deckCount: player.deck.size,
-        discard: player.pileDeck.cards.map((card) => this.publicCard(card)),
-        bases: player.bases.cards.map((card) => this.publicCard(card)),
+        discard: player.pileDeck.cards.map((card) =>
+          this.publicCard(card, playerId)
+        ),
+        bases: player.bases.cards.map((card) =>
+          this.publicCard(card, playerId)
+        ),
         playedShips: player.currentPlayedCards.cards.map((card) =>
-          this.publicCard(card)
+          this.publicCard(card, playerId)
         )
       }))
     };
@@ -751,6 +776,12 @@ export class GameEntity {
           action.name === TCardAbilitiesNames.SCRAP_CARD_FROM_HAND_OR_PILE
             ? action.optional
             : false;
+        const hasTargets =
+          (action.name !== TCardAbilitiesNames.SCRAP_CARD_FROM_PILE &&
+            player.hand.size > 0) ||
+          (action.name !== TCardAbilitiesNames.SCRAP_CARD_FROM_HAND &&
+            player.pileDeck.size > 0);
+        if (!hasTargets) return false;
         this.pendingAction = {
           type: 'choose_cards_to_scrap',
           playerId: player.id,
@@ -1030,20 +1061,33 @@ export class GameEntity {
   private effectiveFraction(card: CardEntity): FractionType {
     if (card.copiedCardId) {
       return (
-        this.currentPlayer?.currentPlayedCards.getCardById(card.copiedCardId)
-          ?.card.fraction ?? card.card.fraction
+        this.allCards.find((item) => item.id === card.copiedCardId)?.card
+          .fraction ?? card.card.fraction
       );
     }
     return card.card.fraction;
   }
 
-  private publicCard(card: CardEntity) {
+  private publicCard(card: CardEntity, viewerId: string) {
     return {
       id: card.id,
       ...card.card,
       currentDefense: card.currentDefense,
       playedThisTurn: card.playedThisTurn,
-      usedAbilities: card.usedAbilities
+      usedAbilities: card.usedAbilities,
+      copiedCardId: card.copiedCardId,
+      abilityStates: card.allAbilities.map((ability) => ({
+        id: ability.id,
+        kind: ability.kind,
+        action: ability.action,
+        isUsed: ability.isUsed,
+        isAvailable:
+          this.status === 'active' &&
+          this.currentPlayer?.id === viewerId &&
+          !this.pendingAction &&
+          this.currentPlayer.cardsInPlay.includes(card) &&
+          this.canUseCardAbility(card, ability.id)
+      }))
     };
   }
 
