@@ -19,6 +19,7 @@ import {
 } from './dto/starfall-command.dto';
 import { GameEntity } from './entities/game.entity';
 import { getStarfallGamesPlayersSelect } from './db-helpers';
+import { Prisma } from '@prisma/client';
 
 interface GameRequest<T> {
   gameId: string;
@@ -91,11 +92,28 @@ export class StarfallService {
   }
 
   async getGames(
-    dto: GetStarfallGamesQueryDto
+    dto: GetStarfallGamesQueryDto,
+    userId: string
   ): Promise<StarfallGameListItemDto[]> {
     const onlyNotStarted = dto.notStarted === true || dto.notStarted === 'true';
+    const isMy = dto.my === true || dto.my === 'true';
+
+    const where: Prisma.StarfallGameWhereInput = {};
+
+    if (onlyNotStarted) {
+      where.status = 'waiting';
+    }
+
+    if (isMy) {
+      where.players = {
+        some: {
+          id: this.userId(userId)
+        }
+      };
+    }
+
     const games = await this.prisma.starfallGame.findMany({
-      where: onlyNotStarted ? { status: 'waiting' } : undefined,
+      where,
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,

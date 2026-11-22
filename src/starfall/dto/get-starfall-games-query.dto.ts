@@ -10,4 +10,13 @@ export class GetStarfallGamesQueryDto {
   @IsOptional()
   @IsIn([true, false, 'true', 'false'])
   notStarted?: boolean | 'true' | 'false';
+
+  @ApiPropertyOptional({
+    type: Boolean,
+    description: 'Return only my games',
+    default: false
+  })
+  @IsOptional()
+  @IsIn([true, false, 'true', 'false'])
+  my?: boolean | 'true' | 'false';
 }

@@ -49,8 +49,11 @@ export class StarfallController {
     operationId: 'getStarfallGames'
   })
   @ApiResponse({ status: 200, type: [StarfallGameListItemDto] })
-  getGames(@Query() dto: GetStarfallGamesQueryDto) {
-    return this.starfallService.getGames(dto);
+  getGames(
+    @Query() dto: GetStarfallGamesQueryDto,
+    @StarfallGameContext() context: StarfallGameContextValue
+  ) {
+    return this.starfallService.getGames(dto, context.playerId);
   }
 
   @Get('games/:gameId')
