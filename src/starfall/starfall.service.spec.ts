@@ -7,6 +7,9 @@ describe('StarfallService', () => {
     players: { username: string }[];
   };
 
+  const realtime = {
+    publish: jest.fn<Promise<void>, [{ id: string; version: number }]>()
+  };
   const users = new Map<number, string>();
   const records = new Map<
     string,
@@ -61,10 +64,55 @@ describe('StarfallService', () => {
     users.set(2, 'Bob');
     users.set(3, 'Charlie');
     jest.clearAllMocks();
+    realtime.publish.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('publishes only persisted mutations, not conflicts or duplicate requests', async () => {
+    const service = new StarfallService(prisma as never, realtime as never);
+    const created = await service.createGame({ startingHp: 50 }, '1');
+    realtime.publish.mockImplementation(async (game) => {
+      expect(records.get(game.id)?.version).toBe(game.version);
+    });
+    const joined = await service.joinGame({
+      gameId: created.id,
+      dto: { expectedVersion: 0 },
+      playerId: '2'
+    });
+    expect(realtime.publish).toHaveBeenCalledTimes(1);
+    await service.joinGame({
+      gameId: created.id,
+      dto: { expectedVersion: 0 },
+      playerId: '2'
+    });
+    const command = {
+      commandId: 'end-once',
+      expectedVersion: joined.version,
+      type: 'end_turn' as const,
+      payload: {}
+    };
+    await service.execute({
+      gameId: created.id,
+      dto: command,
+      playerId: String(joined.currentPlayerId)
+    });
+    expect(realtime.publish).toHaveBeenCalledTimes(2);
+    await service.execute({
+      gameId: created.id,
+      dto: command,
+      playerId: String(joined.currentPlayerId)
+    });
+    await expect(
+      service.execute({
+        gameId: created.id,
+        dto: { ...command, commandId: 'stale' },
+        playerId: String(joined.currentPlayerId)
+      })
+    ).rejects.toThrow();
+    expect(realtime.publish).toHaveBeenCalledTimes(2);
   });
 
   it('persists commands with optimistic locking and idempotency', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
     const joined = await service.joinGame({
       gameId: created.id,
@@ -107,7 +155,7 @@ describe('StarfallService', () => {
     expect(prisma.user.findMany).not.toHaveBeenCalled();
     expect(prisma.starfallGame.update).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        select: { id: true, players: false }
+        select: { id: true }
       })
     );
     expect(after.version).toBe(2);
@@ -116,7 +164,7 @@ describe('StarfallService', () => {
   });
 
   it('loads current related names with the game, without persisting them in the snapshot', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
     users.set(1, 'Renamed Alice');
     const view = await service.getGameView(created.id, '1');
@@ -134,7 +182,7 @@ describe('StarfallService', () => {
   });
 
   it('rejects a stale state version', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
 
     await expect(
@@ -152,7 +200,7 @@ describe('StarfallService', () => {
   });
 
   it('connects a joined player to the persisted game', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 77 }, '1');
 
     const joined = await service.joinGame({
@@ -181,7 +229,7 @@ describe('StarfallService', () => {
   });
 
   it('returns all games ordered from newest to oldest', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const newestCreatedAt = new Date('2026-08-29T12:00:00.000Z');
     const oldestCreatedAt = new Date('2026-08-28T12:00:00.000Z');
     prisma.starfallGame.findMany.mockResolvedValueOnce([
@@ -197,10 +245,10 @@ describe('StarfallService', () => {
       }
     ]);
 
-    const games = await service.getGames({});
+    const games = await service.getGames({}, '1');
 
     expect(prisma.starfallGame.findMany).toHaveBeenCalledWith({
-      where: undefined,
+      where: {},
       orderBy: { createdAt: 'desc' },
       select: {
         id: true,
@@ -223,16 +271,16 @@ describe('StarfallService', () => {
   });
 
   it('filters games that have not started', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
 
-    await service.getGames({ notStarted: 'true' });
+    await service.getGames({ notStarted: 'true' }, '1');
 
     expect(prisma.starfallGame.findMany).toHaveBeenCalledWith(
       expect.objectContaining({ where: { status: 'waiting' } })
     );
   });
   it('exposes lobby metadata before join, then starts and returns private hands', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
     const lobby = await service.getLobby(created.id);
     expect(lobby).toEqual({
@@ -271,7 +319,7 @@ describe('StarfallService', () => {
   });
 
   it('rejects concurrent joins using the persisted version', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
     const results = await Promise.allSettled(
       ['2', '3'].map((playerId) =>
@@ -291,7 +339,7 @@ describe('StarfallService', () => {
   });
 
   it('does not accept commands from a nonparticipant', async () => {
-    const service = new StarfallService(prisma as never);
+    const service = new StarfallService(prisma as never, realtime as never);
     const created = await service.createGame({ startingHp: 50 }, '1');
     await expect(
       service.execute({

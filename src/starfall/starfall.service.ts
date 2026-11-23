@@ -20,6 +20,7 @@ import {
 import { GameEntity } from './entities/game.entity';
 import { getStarfallGamesPlayersSelect } from './db-helpers';
 import { Prisma } from '@prisma/client';
+import { StarfallRealtimeService } from './starfall-realtime.service';
 
 interface GameRequest<T> {
   gameId: string;
@@ -41,7 +42,10 @@ interface SaveGameParams {
 
 @Injectable()
 export class StarfallService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly realtime: StarfallRealtimeService
+  ) {}
 
   async createGame(dto: CreateStarfallGameDto, playerId: string) {
     const initialCards: CardFromDb[] = cards.flatMap((definition) =>
@@ -160,6 +164,7 @@ export class StarfallService {
         error instanceof Error ? error.message : 'Unable to join game'
       );
     }
+    await this.realtime.publish(game);
     return this.privateView(game, playerId);
   }
 
@@ -201,6 +206,7 @@ export class StarfallService {
       );
     }
 
+    await this.realtime.publish(game);
     return this.privateView(game, playerId);
   }
 
