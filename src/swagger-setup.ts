@@ -1,5 +1,6 @@
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { INestApplication } from '@nestjs/common';
+import { AppModule } from './app.module';
 import { AuthModule } from './auth/auth.module';
 import { GamesModule } from './games/games.module';
 import { UsersModule } from './users/users.module';
@@ -8,6 +9,16 @@ import { QuizCommentsModule } from './quiz-comments/quiz-comments.module';
 import { StarfallModule } from './starfall/starfall.module';
 
 export const swaggerSetup = (app: INestApplication) => {
+  const appOptions = new DocumentBuilder()
+    .setTitle('Gamelandia app API')
+    .setVersion('1.0.0')
+    .build();
+
+  const appDocument = SwaggerModule.createDocument(app, appOptions, {
+    include: [AppModule]
+  });
+  SwaggerModule.setup('/api/docs/app', app, appDocument);
+
   // Auth Module docs
   const authModuleOptions = new DocumentBuilder()
     .setTitle('Gamelandia auth api')
