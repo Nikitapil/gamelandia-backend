@@ -1,4 +1,8 @@
 import { StarfallService } from './starfall.service';
+import { cards } from './domain/constants';
+import { StarfallSnapshot } from './domain/dbTypes';
+import { CardEntity } from './entities/card.entity';
+import { GameEntity } from './entities/game.entity';
 
 describe('StarfallService', () => {
   type GameListRecord = {
@@ -109,6 +113,65 @@ describe('StarfallService', () => {
       })
     ).rejects.toThrow();
     expect(realtime.publish).toHaveBeenCalledTimes(2);
+  });
+
+  it('saves and publishes automatic ally effects within the play command exactly once', async () => {
+    const service = new StarfallService(prisma as never, realtime as never);
+    const created = await service.createGame({ startingHp: 50 }, '1');
+    await service.joinGame({
+      gameId: created.id,
+      dto: { expectedVersion: 0 },
+      playerId: '2'
+    });
+    const record = records.get(created.id);
+    if (!record) throw new Error('Game record not found');
+    const game = GameEntity.fromSnapshot(record.state as StarfallSnapshot);
+    const actor = game.currentPlayer;
+    const definition = cards.find((card) => card.name === 'Ram');
+    if (!actor || !definition) throw new Error('Invalid game setup');
+    const first = new CardEntity({ id: 'ally-first', card: definition });
+    const second = new CardEntity({ id: 'ally-second', card: definition });
+    actor.hand.addMany([first, second]);
+    game.playCard(actor.id, first.id);
+    record.state = game.toSnapshot();
+    realtime.publish.mockClear();
+    prisma.starfallGame.update.mockClear();
+    realtime.publish.mockImplementation(async (published) => {
+      expect(records.get(published.id)?.state).toMatchObject({
+        players: expect.arrayContaining([
+          expect.objectContaining({ id: actor.id, attack: 14 })
+        ])
+      });
+    });
+    const request = {
+      gameId: game.id,
+      playerId: actor.id,
+      dto: {
+        commandId: 'auto-ally',
+        expectedVersion: game.version,
+        type: 'play_card' as const,
+        payload: { cardId: second.id }
+      }
+    };
+    const result = await service.execute(request);
+    const current = result.players.find((player) => player.id === actor.id);
+    if (!current) throw new Error('Actor not found in game view');
+    expect(current.attack).toBe(14);
+    expect(
+      current.playedShips.map((card) =>
+        card.abilityStates.find((ability) => ability.id === 'ally:0')
+      )
+    ).toEqual([
+      expect.objectContaining({ isUsed: true, isAvailable: false }),
+      expect.objectContaining({ isUsed: true, isAvailable: false })
+    ]);
+    expect(result.version).toBe(game.version + 1);
+    expect(await service.getGameView(game.id, actor.id)).toEqual(result);
+    expect(await service.execute(request)).toEqual(result);
+    expect(prisma.starfallGame.update).toHaveBeenCalledTimes(1);
+    expect(realtime.publish).toHaveBeenCalledTimes(1);
+    const published = realtime.publish.mock.calls[0][0] as GameEntity;
+    expect(published.getViewFor(actor.id)).toEqual(result);
   });
 
   it('persists commands with optimistic locking and idempotency', async () => {

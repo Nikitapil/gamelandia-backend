@@ -267,6 +267,7 @@ export class GameEntity {
     this.status = 'active';
     this.turnNumber = 1;
     this.currentPlayer.startTurn();
+    this.executeAutomaticAllyAbilities();
   }
 
   endTurn(playerId: string) {
@@ -286,6 +287,7 @@ export class GameEntity {
     next.getCardsFromDeck(HAND_SIZE - next.hand.size);
     next.startTurn();
     this.prepareOpponentDiscard(next);
+    this.executeAutomaticAllyAbilities();
   }
 
   playCard(playerId: string, cardId: string) {
@@ -305,6 +307,7 @@ export class GameEntity {
           this.executeAbility(card, ability);
         }
       }
+      this.executeAutomaticAllyAbilities();
       return card;
     } catch (error) {
       player.hand.add(card);
@@ -338,6 +341,7 @@ export class GameEntity {
     }
     const ability = card.requireAbility(abilityId);
     this.executeAbility(card, ability);
+    this.executeAutomaticAllyAbilities();
   }
 
   canUseCardAbility(card: CardEntity, abilityId: string) {
@@ -346,6 +350,22 @@ export class GameEntity {
       card.canUseAbility(abilityId) &&
       (ability.kind !== 'ally' || this.hasAllyFor(card))
     );
+  }
+
+  private executeAutomaticAllyAbilities() {
+    if (this.status !== 'active' || !this.currentPlayer || this.pendingAction) {
+      return;
+    }
+    for (const card of this.currentPlayer.cardsInPlay) {
+      for (const ability of card.allAbilities) {
+        if (
+          ability.isAutomaticAlly &&
+          this.canUseCardAbility(card, ability.id)
+        ) {
+          this.executeAbility(card, ability);
+        }
+      }
+    }
   }
 
   private executeAbility(source: CardEntity, ability: Ability) {
@@ -413,6 +433,7 @@ export class GameEntity {
       }
       ids.forEach((id) => player.pileDeck.add(player.hand.removeById(id)));
       player.discardCardsCount = 0;
+      this.executeAutomaticAllyAbilities();
       return;
     }
 
@@ -512,19 +533,21 @@ export class GameEntity {
           source,
           abilityId: pending.abilityId
         });
-        if (this.pendingAction) {
-          this.appendContinuation(pending.continuation);
-          return;
-        }
         break;
       }
     }
 
+    // A copied primary effect can open another choice, just like choose_effect.
+    if (this.pendingAction) {
+      this.appendContinuation(pending.continuation);
+      return;
+    }
     this.executeContinuation({
       continuation: pending.continuation,
       source,
       abilityId: pending.abilityId
     });
+    this.executeAutomaticAllyAbilities();
   }
 
   cancelPendingAction(playerId: string) {

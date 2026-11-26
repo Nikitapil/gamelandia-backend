@@ -1,4 +1,4 @@
-import { cards } from '../domain/constants';
+import { Action, cards, TCardAbilitiesNames } from '../domain/constants';
 import { CardFromDb, PlayerFromDb } from '../domain/dbTypes';
 import { CardEntity } from './card.entity';
 import { GameEntity } from './game.entity';
@@ -146,24 +146,47 @@ describe('GameEntity', () => {
     expect(current.attack).toBe(2);
   });
 
-  it('activates ally abilities in either play order', () => {
-    const game = createGame();
-    const current = game.currentPlayer;
+  it.each([false, true])(
+    'automatically resolves allies in either play order: %s',
+    (reverse) => {
+      const game = createGame();
+      const current = game.currentPlayer;
 
-    if (!current) {
-      throw new Error('invalid current player');
+      if (!current) {
+        throw new Error('invalid current player');
+      }
+
+      const first = card('Blob Fighter', 'blob-one');
+      const second = card('Trade Pod', 'blob-two');
+      current.hand.addMany([first, second]);
+      const handSize = current.hand.size;
+      const order = reverse ? [second, first] : [first, second];
+
+      game.playCard(current.id, order[0].id);
+      expect(order[0].requireAbility('ally:0').isUsed).toBe(false);
+      expect(game.canUseCardAbility(order[0], 'ally:0')).toBe(false);
+      game.playCard(current.id, order[1].id);
+      expect(first.requireAbility('ally:0').isUsed).toBe(true);
+      expect(second.requireAbility('ally:0').isUsed).toBe(true);
+      expect(current.attack).toBe(5);
+      expect(current.money).toBe(3);
+      expect(current.hand.size).toBe(handSize - 1);
+      expect(game.pendingAction).toBeNull();
+
+      const third = card('Trade Pod', 'blob-three');
+      current.hand.add(third);
+      game.playCard(current.id, third.id);
+      expect(current.attack).toBe(7);
+      expect(current.hand.size).toBe(handSize - 1);
+      expect(() =>
+        game.useCardAbility({
+          playerId: current.id,
+          cardId: first.id,
+          abilityId: 'ally:0'
+        })
+      ).toThrow('not currently available');
     }
-
-    const first = card('Blob Fighter', 'blob-one');
-    const second = card('Trade Pod', 'blob-two');
-    current.hand.addMany([first, second]);
-
-    game.playCard(current.id, first.id);
-    expect(game.canUseCardAbility(first, 'ally:0')).toBe(false);
-    game.playCard(current.id, second.id);
-    expect(game.canUseCardAbility(first, 'ally:0')).toBe(true);
-    expect(game.canUseCardAbility(second, 'ally:0')).toBe(true);
-  });
+  );
 
   it('uses Mech World as an ally for every faction', () => {
     const game = createGame();
@@ -180,7 +203,315 @@ describe('GameEntity', () => {
     game.playCard(current.id, mechWorld.id);
     game.playCard(current.id, blob.id);
 
-    expect(game.canUseCardAbility(blob, 'ally:0')).toBe(true);
+    expect(blob.requireAbility('ally:0').isUsed).toBe(true);
+    expect(game.canUseCardAbility(blob, 'ally:0')).toBe(false);
+  });
+
+  it('automatically restores authority and schedules the opponent discard', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const shuttle = card('Federation Shuttle');
+    const cutter = card('Cutter');
+    const cruiser = card('Battlecruiser');
+    const station = card('Space Station');
+    current.hand.addMany([shuttle, cutter, cruiser, station]);
+    game.playCard(current.id, shuttle.id);
+    game.playCard(current.id, cutter.id);
+    expect(current.hp).toBe(58);
+    expect(current.attack).toBe(4);
+    game.playCard(current.id, cruiser.id);
+    game.playCard(current.id, station.id);
+    expect(game.players[1].discardCardsCount).toBe(1);
+    expect(cruiser.requireAbility('ally:0').isUsed).toBe(true);
+    expect(game.pendingAction).toBeNull();
+
+    game.endTurn(current.id);
+    expect(game.pendingAction?.type).toBe('discard_for_opponent');
+  });
+
+  it('resolves allied bases again at the start of their next turn', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const station = card('Space Station');
+    const world = card('War World');
+    current.hand.addMany([station, world]);
+    game.playCard(current.id, station.id);
+    game.playCard(current.id, world.id);
+    expect(current.attack).toBe(11);
+    game.endTurn(current.id);
+    expect(current.attack).toBe(0);
+    game.endTurn(game.players[1].id);
+    expect(current.attack).toBe(11);
+    expect(station.requireAbility('ally:0').isUsed).toBe(true);
+    expect(world.requireAbility('ally:0').isUsed).toBe(true);
+  });
+
+  it('waits for the mandatory start-of-turn discard before drawing from allied bases', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const hive = card('The Hive');
+    const mech = card('Mech World');
+    current.hand.addMany([hive, mech]);
+    game.playCard(current.id, hive.id);
+    game.playCard(current.id, mech.id);
+    expect(hive.requireAbility('ally:0').isUsed).toBe(true);
+    game.endTurn(current.id);
+    current.discardCardsCount = 1;
+    current.deck.replaceAll(
+      Array.from({ length: 8 }, (_, i) => card('Scout', `draw-${i}`))
+    );
+    game.endTurn(game.players[1].id);
+    expect(current.hand.size).toBe(5);
+    expect(current.hand.has('draw-5')).toBe(false);
+    expect(hive.requireAbility('ally:0').isUsed).toBe(false);
+    expect(game.pendingAction?.type).toBe('discard_for_opponent');
+    game.resolvePendingAction(current.id, { cardIds: ['draw-0'] });
+    expect(current.hand.size).toBe(5);
+    expect(current.hand.has('draw-5')).toBe(true);
+    expect(hive.requireAbility('ally:0').isUsed).toBe(true);
+  });
+
+  it.each([false, true])(
+    'waits for a primary choice to resolve or cancel: %s',
+    (cancel) => {
+      const game = createGame();
+      const current = game.players[0];
+      const fighter = card('Blob Fighter');
+      const pod = card('Battle Pod');
+      current.hand.addMany([fighter, pod]);
+      game.playCard(current.id, fighter.id);
+      game.playCard(current.id, pod.id);
+      const handSize = current.hand.size;
+      expect(current.attack).toBe(7);
+      expect(fighter.requireAbility('ally:0').isUsed).toBe(false);
+      expect(pod.requireAbility('ally:0').isUsed).toBe(false);
+      expect(game.pendingAction?.type).toBe('choose_trade_card_to_scrap');
+      if (cancel) game.cancelPendingAction(current.id);
+      else
+        game.resolvePendingAction(current.id, {
+          cardId: game.tradeRow.cards[0].id
+        });
+      expect(current.attack).toBe(9);
+      expect(current.hand.size).toBe(handSize + 1);
+      expect(game.pendingAction).toBeNull();
+    }
+  );
+
+  it('resumes automatic copied allies only after the copied primary choice, including after reload', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const mech = card('Battle Mech');
+    const needle = card('Stealth Needle');
+    current.hand.addMany([mech, needle]);
+    game.playCard(current.id, mech.id);
+    game.resolvePendingAction(current.id, { cardIds: [] });
+    game.playCard(current.id, needle.id);
+    game.resolvePendingAction(current.id, { cardId: mech.id });
+    expect(game.pendingAction?.type).toBe('choose_cards_to_scrap');
+    expect(mech.requireAbility('ally:0').isUsed).toBe(false);
+    expect(needle.requireAbility('copied:ally:0').isUsed).toBe(false);
+    const restored = GameEntity.fromSnapshot(game.toSnapshot());
+    const handSize = restored.players[0].hand.size;
+    restored.resolvePendingAction(current.id, { cardIds: [] });
+    expect(restored.players[0].hand.size).toBe(handSize + 2);
+    const ships = restored.getViewFor(current.id).players[0].playedShips;
+    expect(
+      ships
+        .flatMap((ship) => ship.abilityStates)
+        .filter((ability) => ability.kind === 'ally')
+    ).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: 'ally:0',
+          isUsed: true,
+          isAvailable: false
+        }),
+        expect.objectContaining({
+          id: 'copied:ally:0',
+          isUsed: true,
+          isAvailable: false
+        })
+      ])
+    );
+  });
+
+  it('preserves the continuation after a copied choice and waits for every nested choice', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const mech = card('Battle Mech');
+    const needle = new CardEntity({
+      id: 'nested-copy',
+      card: {
+        ...card('Stealth Needle').card,
+        abilities: [
+          {
+            name: TCardAbilitiesNames.SEQUENCE,
+            actions: [
+              { name: TCardAbilitiesNames.COPY_SHIP },
+              {
+                name: TCardAbilitiesNames.CHOOSE_ONE,
+                options: [[{ name: TCardAbilitiesNames.PLUS_MONEY, value: 3 }]]
+              }
+            ]
+          }
+        ]
+      }
+    });
+    current.hand.addMany([mech, needle]);
+    game.playCard(current.id, mech.id);
+    game.resolvePendingAction(current.id, { cardIds: [] });
+    game.playCard(current.id, needle.id);
+    const handSize = current.hand.size;
+    game.resolvePendingAction(current.id, { cardId: mech.id });
+    expect(game.pendingAction?.type).toBe('choose_cards_to_scrap');
+    expect(current.hand.size).toBe(handSize);
+    game.resolvePendingAction(current.id, { cardIds: [] });
+    expect(game.pendingAction?.type).toBe('choose_effect');
+    expect(current.hand.size).toBe(handSize);
+    expect(current.money).toBe(0);
+    game.resolvePendingAction(current.id, { optionIndex: 0 });
+    expect(game.pendingAction).toBeNull();
+    expect(current.money).toBe(3);
+    expect(current.hand.size).toBe(handSize + 2);
+  });
+
+  it.each(['Blob Carrier', 'Blob Destroyer', 'Patrol Mech', 'Command Ship'])(
+    'keeps choice-based allies manual: %s',
+    (name) => {
+      const game = createGame();
+      const current = game.players[0];
+      const source = card(name);
+      const mech = card('Mech World');
+      current.hand.addMany([source, mech]);
+      game.playCard(current.id, mech.id);
+      game.playCard(current.id, source.id);
+      if (game.pendingAction)
+        game.resolvePendingAction(current.id, { optionIndex: 0 });
+      expect(game.pendingAction).toBeNull();
+      for (const ability of source.matchedAbilities) {
+        expect(ability.isUsed).toBe(false);
+        expect(game.canUseCardAbility(source, ability.id)).toBe(true);
+      }
+      game.useCardAbility({
+        playerId: current.id,
+        cardId: source.id,
+        abilityId: 'ally:0'
+      });
+      expect(source.requireAbility('ally:0').isUsed).toBe(true);
+    }
+  );
+
+  it('keeps optional destruction manual even with exactly one target', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const destroyer = card('Blob Destroyer');
+    const ram = card('Ram');
+    const base = card('Blob Wheel');
+    game.players[1].putCardInPlay(base);
+    current.hand.addMany([destroyer, ram]);
+    game.playCard(current.id, destroyer.id);
+    game.playCard(current.id, ram.id);
+    expect(destroyer.requireAbility('ally:0').isUsed).toBe(false);
+    expect(game.players[1].bases.has(base.id)).toBe(true);
+    game.useCardAbility({
+      playerId: current.id,
+      cardId: destroyer.id,
+      abilityId: 'ally:0'
+    });
+    expect(game.pendingAction?.type).toBe('choose_base_to_destroy');
+    game.cancelPendingAction(current.id);
+    expect(game.players[1].bases.has(base.id)).toBe(true);
+  });
+
+  it('resolves nested automatic effects but leaves an entire mixed sequence manual', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const automatic: Action = {
+      name: TCardAbilitiesNames.SEQUENCE,
+      actions: [
+        { name: TCardAbilitiesNames.PLUS_MONEY, value: 2 },
+        { name: TCardAbilitiesNames.PUT_NEXT_SHIP_ON_TOP },
+        { name: TCardAbilitiesNames.ALL_FACTIONS_ALLY },
+        {
+          name: TCardAbilitiesNames.IF_BASES_IN_PLAY,
+          min: 1,
+          actions: [
+            {
+              name: TCardAbilitiesNames.DRAW_PER_FACTION_CARD,
+              fraction: 'blobs'
+            }
+          ]
+        }
+      ]
+    };
+    const mixed: Action = {
+      name: TCardAbilitiesNames.SEQUENCE,
+      actions: [
+        { name: TCardAbilitiesNames.PLUS_ATTACK, value: 100 },
+        {
+          name: TCardAbilitiesNames.IF_BASES_IN_PLAY,
+          min: 1,
+          actions: [
+            {
+              name: TCardAbilitiesNames.CHOOSE_ONE,
+              options: [[{ name: TCardAbilitiesNames.GET_CARDS, value: 1 }]]
+            }
+          ]
+        }
+      ]
+    };
+    const source = new CardEntity({
+      id: 'compound-ally',
+      card: { ...card('Ram').card, matchAbilities: [automatic, mixed] }
+    });
+    const mech = card('Mech World');
+    current.hand.addMany([source, mech]);
+    const handSize = current.hand.size;
+    game.playCard(current.id, mech.id);
+    game.playCard(current.id, source.id);
+    expect(current.money).toBe(2);
+    expect(current.nextShipToTop).toBe(true);
+    expect(current.hand.size).toBe(handSize - 1);
+    expect(current.attack).toBe(5);
+    expect(source.requireAbility('ally:0').isUsed).toBe(true);
+    expect(source.requireAbility('ally:1').isUsed).toBe(false);
+    expect(source.requireAbility('scrap:0').isUsed).toBe(false);
+    expect(game.pendingAction).toBeNull();
+    game.useCardAbility({
+      playerId: current.id,
+      cardId: source.id,
+      abilityId: 'ally:1'
+    });
+    expect(current.attack).toBe(105);
+    expect(game.pendingAction?.type).toBe('choose_effect');
+  });
+
+  it('does not repeat automatic effects when retrying a command or restoring its snapshot', () => {
+    const game = createGame();
+    const current = game.players[0];
+    const fighter = card('Blob Fighter');
+    const ram = card('Ram');
+    current.hand.addMany([fighter, ram]);
+    game.playCard(current.id, fighter.id);
+    const command = {
+      commandId: 'play-ally-once',
+      expectedVersion: game.version,
+      command: () => game.playCard(current.id, ram.id)
+    };
+    game.executeCommand(command);
+    const snapshot = game.toSnapshot();
+    game.executeCommand(command);
+    expect(game.toSnapshot()).toEqual(snapshot);
+    const restored = GameEntity.fromSnapshot(snapshot);
+    restored.getViewFor(current.id);
+    restored.executeCommand({
+      ...command,
+      command: () => {
+        throw new Error('Duplicate command executed');
+      }
+    });
+    expect(restored.toSnapshot()).toEqual(snapshot);
+    expect(restored.players[0].attack).toBe(10);
   });
 
   it('creates and resolves a scrap pending action', () => {
@@ -446,11 +777,9 @@ describe('GameEntity', () => {
     game.playCard(player.id, ram.id);
     game.playCard(player.id, needle.id);
     game.resolvePendingAction(player.id, { cardId: ram.id });
-    game.useCardAbility({
-      playerId: player.id,
-      cardId: needle.id,
-      abilityId: 'copied:ally:0'
-    });
+    expect(needle.requireAbility('copied:ally:0').isUsed).toBe(true);
+    expect(ram.requireAbility('ally:0').isUsed).toBe(true);
+    expect(player.attack).toBe(14);
     game.useCardAbility({
       playerId: player.id,
       cardId: ram.id,
